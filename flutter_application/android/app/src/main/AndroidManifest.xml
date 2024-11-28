@@ -28,10 +28,10 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:scheme="io.supabase.testproject"
+                    android:scheme="io.supabase.amaravati-chamber://login-callback/"
                     android:host="login-callback" />
                 <data
-                    android:scheme="io.supabase.testproject"
+                    android:scheme="io.supabase.amaravati-chamber://change-email/"
                     android:host="change-email" />
             </intent-filter>
         </activity>

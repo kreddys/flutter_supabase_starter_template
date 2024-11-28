@@ -2,7 +2,7 @@ class Urls {
   Urls._();
 
   //Supabase URLs
-  static const _baseSupabaseUrl = "io.supabase.testproject";
+  static const _baseSupabaseUrl = "io.supabase.amaravati-chamber";
   static const loginCallbackUrl = "$_baseSupabaseUrl://login-callback/";
   static const changeEmailCallbackUrl = "$_baseSupabaseUrl://change-email/";
 

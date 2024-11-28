@@ -20,8 +20,8 @@ void main() async {
 
 Future<void> _initializeSupabase() async {
   await Supabase.initialize(
-    url: "PROJECT_URL",
-    anonKey: "PUBLIC_ANON_KEY",
+    url: "https://kmisqlvoiofymxicxiwv.supabase.co",
+    anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttaXNxbHZvaW9meW14aWN4aXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI4MTU3NjQsImV4cCI6MjA0ODM5MTc2NH0.BqbDLNjAeRA_4g7apBTsikG4QUMWGIFUokiA3spiptk",
   );
 }
 

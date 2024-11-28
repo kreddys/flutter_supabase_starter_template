@@ -52,7 +52,7 @@
 				<string>Editor</string>
 				<key>CFBundleURLSchemes</key>
 				<array>
-					<string>io.supabase.test_project</string>
+					<string>io.supabase.amaravati-chamber</string>
 				</array>
 			</dict>
 		</array>
