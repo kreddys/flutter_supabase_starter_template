@@ -20,7 +20,9 @@ mixin _$NewsState {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<NewsArticle> articles) loaded,
+    required TResult Function(
+            List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData)
+        loaded,
     required TResult Function(String message) error,
   }) =>
       throw _privateConstructorUsedError;
@@ -28,7 +30,9 @@ mixin _$NewsState {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<NewsArticle> articles)? loaded,
+    TResult? Function(
+            List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData)?
+        loaded,
     TResult? Function(String message)? error,
   }) =>
       throw _privateConstructorUsedError;
@@ -36,7 +40,9 @@ mixin _$NewsState {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<NewsArticle> articles)? loaded,
+    TResult Function(
+            List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData)?
+        loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) =>
@@ -131,7 +137,9 @@ class _$InitialImpl implements _Initial {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<NewsArticle> articles) loaded,
+    required TResult Function(
+            List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData)
+        loaded,
     required TResult Function(String message) error,
   }) {
     return initial();
@@ -142,7 +150,9 @@ class _$InitialImpl implements _Initial {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<NewsArticle> articles)? loaded,
+    TResult? Function(
+            List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData)?
+        loaded,
     TResult? Function(String message)? error,
   }) {
     return initial?.call();
@@ -153,7 +163,9 @@ class _$InitialImpl implements _Initial {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<NewsArticle> articles)? loaded,
+    TResult Function(
+            List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData)?
+        loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -248,7 +260,9 @@ class _$LoadingImpl implements _Loading {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<NewsArticle> articles) loaded,
+    required TResult Function(
+            List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData)
+        loaded,
     required TResult Function(String message) error,
   }) {
     return loading();
@@ -259,7 +273,9 @@ class _$LoadingImpl implements _Loading {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<NewsArticle> articles)? loaded,
+    TResult? Function(
+            List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData)?
+        loaded,
     TResult? Function(String message)? error,
   }) {
     return loading?.call();
@@ -270,7 +286,9 @@ class _$LoadingImpl implements _Loading {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<NewsArticle> articles)? loaded,
+    TResult Function(
+            List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData)?
+        loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -328,7 +346,7 @@ abstract class _$$LoadedImplCopyWith<$Res> {
           _$LoadedImpl value, $Res Function(_$LoadedImpl) then) =
       __$$LoadedImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({List<NewsArticle> articles});
+  $Res call({List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData});
 }
 
 /// @nodoc
@@ -345,12 +363,22 @@ class __$$LoadedImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? articles = null,
+    Object? isLoadingMore = null,
+    Object? hasMoreData = null,
   }) {
     return _then(_$LoadedImpl(
-      null == articles
+      articles: null == articles
           ? _value._articles
           : articles // ignore: cast_nullable_to_non_nullable
               as List<NewsArticle>,
+      isLoadingMore: null == isLoadingMore
+          ? _value.isLoadingMore
+          : isLoadingMore // ignore: cast_nullable_to_non_nullable
+              as bool,
+      hasMoreData: null == hasMoreData
+          ? _value.hasMoreData
+          : hasMoreData // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -358,7 +386,11 @@ class __$$LoadedImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$LoadedImpl implements _Loaded {
-  const _$LoadedImpl(final List<NewsArticle> articles) : _articles = articles;
+  const _$LoadedImpl(
+      {required final List<NewsArticle> articles,
+      required this.isLoadingMore,
+      required this.hasMoreData})
+      : _articles = articles;
 
   final List<NewsArticle> _articles;
   @override
@@ -369,8 +401,13 @@ class _$LoadedImpl implements _Loaded {
   }
 
   @override
+  final bool isLoadingMore;
+  @override
+  final bool hasMoreData;
+
+  @override
   String toString() {
-    return 'NewsState.loaded(articles: $articles)';
+    return 'NewsState.loaded(articles: $articles, isLoadingMore: $isLoadingMore, hasMoreData: $hasMoreData)';
   }
 
   @override
@@ -378,12 +415,19 @@ class _$LoadedImpl implements _Loaded {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$LoadedImpl &&
-            const DeepCollectionEquality().equals(other._articles, _articles));
+            const DeepCollectionEquality().equals(other._articles, _articles) &&
+            (identical(other.isLoadingMore, isLoadingMore) ||
+                other.isLoadingMore == isLoadingMore) &&
+            (identical(other.hasMoreData, hasMoreData) ||
+                other.hasMoreData == hasMoreData));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, const DeepCollectionEquality().hash(_articles));
+  int get hashCode => Object.hash(
+      runtimeType,
+      const DeepCollectionEquality().hash(_articles),
+      isLoadingMore,
+      hasMoreData);
 
   /// Create a copy of NewsState
   /// with the given fields replaced by the non-null parameter values.
@@ -398,10 +442,12 @@ class _$LoadedImpl implements _Loaded {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<NewsArticle> articles) loaded,
+    required TResult Function(
+            List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData)
+        loaded,
     required TResult Function(String message) error,
   }) {
-    return loaded(articles);
+    return loaded(articles, isLoadingMore, hasMoreData);
   }
 
   @override
@@ -409,10 +455,12 @@ class _$LoadedImpl implements _Loaded {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<NewsArticle> articles)? loaded,
+    TResult? Function(
+            List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData)?
+        loaded,
     TResult? Function(String message)? error,
   }) {
-    return loaded?.call(articles);
+    return loaded?.call(articles, isLoadingMore, hasMoreData);
   }
 
   @override
@@ -420,12 +468,14 @@ class _$LoadedImpl implements _Loaded {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<NewsArticle> articles)? loaded,
+    TResult Function(
+            List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData)?
+        loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
     if (loaded != null) {
-      return loaded(articles);
+      return loaded(articles, isLoadingMore, hasMoreData);
     }
     return orElse();
   }
@@ -469,9 +519,14 @@ class _$LoadedImpl implements _Loaded {
 }
 
 abstract class _Loaded implements NewsState {
-  const factory _Loaded(final List<NewsArticle> articles) = _$LoadedImpl;
+  const factory _Loaded(
+      {required final List<NewsArticle> articles,
+      required final bool isLoadingMore,
+      required final bool hasMoreData}) = _$LoadedImpl;
 
   List<NewsArticle> get articles;
+  bool get isLoadingMore;
+  bool get hasMoreData;
 
   /// Create a copy of NewsState
   /// with the given fields replaced by the non-null parameter values.
@@ -550,7 +605,9 @@ class _$ErrorImpl implements _Error {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<NewsArticle> articles) loaded,
+    required TResult Function(
+            List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData)
+        loaded,
     required TResult Function(String message) error,
   }) {
     return error(message);
@@ -561,7 +618,9 @@ class _$ErrorImpl implements _Error {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<NewsArticle> articles)? loaded,
+    TResult? Function(
+            List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData)?
+        loaded,
     TResult? Function(String message)? error,
   }) {
     return error?.call(message);
@@ -572,7 +631,9 @@ class _$ErrorImpl implements _Error {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<NewsArticle> articles)? loaded,
+    TResult Function(
+            List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData)?
+        loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {

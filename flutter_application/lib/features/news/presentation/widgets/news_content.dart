@@ -6,8 +6,34 @@ import '../bloc/news_state.dart';
 import '../../../../dependency_injection.dart';
 import 'article_detail_screen.dart';
 
-class NewsContent extends StatelessWidget {
+class NewsContent extends StatefulWidget {
   const NewsContent({super.key});
+
+  @override
+  State<NewsContent> createState() => _NewsContentState();
+}
+
+class _NewsContentState extends State<NewsContent> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      context.read<NewsCubit>().loadMoreArticles();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,14 +64,24 @@ class NewsContent extends StatelessWidget {
                 loading: () => const Center(
                   child: CircularProgressIndicator(),
                 ),
-                loaded: (articles) => articles.isEmpty
+                loaded: (articles, isLoadingMore, hasMoreData) => articles.isEmpty
                     ? const Center(
                         child: Text('No articles found'),
                       )
                     : ListView.builder(
+                        controller: _scrollController,
                         padding: const EdgeInsets.all(16.0),
-                        itemCount: articles.length,
+                        itemCount: articles.length + (isLoadingMore ? 1 : 0),
                         itemBuilder: (context, index) {
+                          if (index == articles.length) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          }
+
                           final article = articles[index];
                           return Card(
                             margin: const EdgeInsets.only(bottom: 16.0),

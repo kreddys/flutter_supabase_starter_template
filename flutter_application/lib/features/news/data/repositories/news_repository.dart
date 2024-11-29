@@ -13,11 +13,14 @@ class NewsRepository implements INewsRepository {
   NewsRepository(this._client);
 
   @override
-  Future<Either<String, List<NewsArticle>>> getNewsArticles() async {
+  Future<Either<String, List<NewsArticle>>> getNewsArticles({
+    int page = 1,
+    int itemsPerPage = 10,
+  }) async {
     try {
-      // Updated URL to match the working endpoint
+      // Update the URL to include pagination parameters
       final url = Uri.parse(
-          '${ApiConstants.ghostApiUrl}/ghost/api/content/posts/?key=${ApiConstants.ghostApiKey}'
+          '${ApiConstants.ghostApiUrl}/ghost/api/content/posts/?key=${ApiConstants.ghostApiKey}&page=$page&limit=$itemsPerPage'
       );
 
       print('Fetching from URL: $url'); // Debug log
@@ -29,15 +32,15 @@ class NewsRepository implements INewsRepository {
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> posts = data['posts'];
 
-      final articles = posts.map((post) => NewsArticle(
-        id: post['id'],
-        title: post['title'],
-        description: post['excerpt'] ?? post['custom_excerpt'] ?? '',
-        author: 'Amaravati Chamber',
-        publishedAt: DateTime.parse(post['published_at']),
-        imageUrl: post['feature_image'] ?? '',
-        htmlContent: post['html'] ?? '',
-      )).toList();
+        final articles = posts.map((post) => NewsArticle(
+          id: post['id'],
+          title: post['title'],
+          description: post['excerpt'] ?? post['custom_excerpt'] ?? '',
+          author: 'Amaravati Chamber',
+          publishedAt: DateTime.parse(post['published_at']),
+          imageUrl: post['feature_image'] ?? '',
+          htmlContent: post['html'] ?? '',
+        )).toList();
 
         print('Successfully parsed ${articles.length} articles'); // Debug log
         return Right(articles);
