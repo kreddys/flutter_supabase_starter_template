@@ -20,6 +20,10 @@ class _NewsContentState extends State<NewsContent> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    // Load news when the widget is initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NewsCubit>().loadNews();
+    });
   }
 
   @override
@@ -37,107 +41,102 @@ class _NewsContentState extends State<NewsContent> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => getIt<NewsCubit>()..loadNews(),
-      child: Builder(
-        builder: (context) => Scaffold(
-          appBar: AppBar(
-            title: const Text('News'),
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(60),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: SearchBar(
-                  hintText: 'Search articles...',
-                  leading: const Icon(Icons.search),
-                  onChanged: (value) {
-                    context.read<NewsCubit>().searchArticles(value);
-                  },
-                ),
-              ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('News'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: SearchBar(
+              hintText: 'Search articles...',
+              leading: const Icon(Icons.search),
+              onChanged: (value) {
+                context.read<NewsCubit>().searchArticles(value);
+              },
             ),
           ),
-          body: BlocBuilder<NewsCubit, NewsState>(
-            builder: (context, state) {
-              return state.when(
-                initial: () => const SizedBox(),
-                loading: () => const Center(
-                  child: CircularProgressIndicator(),
-                ),
-                loaded: (articles, isLoadingMore, hasMoreData) => articles.isEmpty
-                    ? const Center(
-                        child: Text('No articles found'),
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(16.0),
-                        itemCount: articles.length + (isLoadingMore ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index == articles.length) {
-                            return const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: CircularProgressIndicator(),
+        ),
+      ),
+      body: BlocBuilder<NewsCubit, NewsState>(
+        builder: (context, state) {
+          return state.when(
+            initial: () => const SizedBox(),
+            loading: () => const Center(
+              child: CircularProgressIndicator(),
+            ),
+            loaded: (articles, isLoadingMore, hasMoreData) => articles.isEmpty
+                ? const Center(
+                    child: Text('No articles found'),
+                  )
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16.0),
+                    itemCount: articles.length + (isLoadingMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == articles.length) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
+
+                      final article = articles[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 16.0),
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ArticleDetailScreen(
+                                  article: article,
+                                ),
                               ),
                             );
-                          }
-
-                          final article = articles[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 16.0),
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ArticleDetailScreen(
-                                      article: article,
+                          },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (article.imageUrl.isNotEmpty)
+                                Image.network(
+                                  article.imageUrl,
+                                  width: double.infinity,
+                                  height: 200,
+                                  fit: BoxFit.cover,
+                                ),
+                              Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      article.title,
+                                      style: Theme.of(context).textTheme.titleLarge,
                                     ),
-                                  ),
-                                );
-                              },
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (article.imageUrl.isNotEmpty)
-                                    Image.network(
-                                      article.imageUrl,
-                                      width: double.infinity,
-                                      height: 200,
-                                      fit: BoxFit.cover,
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      article.description,
+                                      style: Theme.of(context).textTheme.bodyMedium,
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          article.title,
-                                          style: Theme.of(context).textTheme.titleLarge,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          article.description,
-                                          style: Theme.of(context).textTheme.bodyMedium,
-                                          maxLines: 3,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
-                error: (message) => Center(
-                  child: Text('Error: $message'),
-                ),
-              );
-            },
-          ),
-        ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+            error: (message) => Center(
+              child: Text('Error: $message'),
+            ),
+          );
+        },
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_application/dependency_injection.dart';
 import 'package:flutter_application/features/home/presentation/bloc/bottom_navigation_bar/bottom_navigation_bar_cubit.dart';
 import 'package:flutter_application/features/home/presentation/widgets/home_navigation_bar.dart';
+import '../../news/presentation/bloc/news_cubit.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({
@@ -11,10 +12,18 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => getIt<BottomNavigationBarCubit>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => getIt<BottomNavigationBarCubit>(),
+        ),
+        BlocProvider(
+          create: (context) => getIt<NewsCubit>(),
+        ),
+      ],
       child: BlocBuilder<BottomNavigationBarCubit, BottomNavigationBarState>(
-        buildWhen: (previous, current) => current.selectedIndex != previous.selectedIndex,
+        buildWhen: (previous, current) => 
+            current.selectedIndex != previous.selectedIndex,
         builder: (context, state) {
           return Scaffold(
             body: SafeArea(
