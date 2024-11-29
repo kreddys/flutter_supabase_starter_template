@@ -52,6 +52,7 @@ import 'package:flutter_application/features/user/domain/use_case/change_email_a
 import 'package:flutter_application/features/user/presentation/bloc/change_email_address/change_email_address_cubit.dart'
     as _i75;
 import 'package:get_it/get_it.dart' as _i174;
+import 'package:http/http.dart' as _i519;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:supabase/supabase.dart' as _i590;
 import 'package:supabase_flutter/supabase_flutter.dart' as _i454;
@@ -73,7 +74,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i454.FunctionsClient>(() => appModule.functionsClient);
     gh.factory<_i740.BottomNavigationBarCubit>(
         () => _i740.BottomNavigationBarCubit());
-    gh.factory<_i221.INewsRepository>(() => _i880.NewsRepository());
+    gh.lazySingleton<_i221.INewsRepository>(
+        () => _i880.NewsRepository(gh<_i519.Client>()));
     gh.factory<_i12.ThemeModeRepository>(() => _i279.ThemeModeHiveRepository());
     gh.factory<_i1023.GetOrSetInitialThemeModeUseCase>(() =>
         _i1023.GetOrSetInitialThemeModeUseCase(gh<_i12.ThemeModeRepository>()));

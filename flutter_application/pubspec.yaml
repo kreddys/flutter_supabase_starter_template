@@ -27,6 +27,7 @@ dependencies:
   url_launcher: ^6.2.4
   freezed_annotation: ^2.4.4
   dartz: ^0.10.1
+  http: ^1.1.0
 
 dev_dependencies:
   flutter_test:
