@@ -15,30 +15,38 @@ class NewsRepository implements INewsRepository {
   @override
   Future<Either<String, List<NewsArticle>>> getNewsArticles() async {
     try {
+      // Updated URL to match the working endpoint
       final url = Uri.parse(
-          '${ApiConstants.ghostApiUrl}/ghost/api/v3/content/posts/?key=${ApiConstants.ghostApiKey}&fields=title,excerpt,published_at,slug,authors'
+          '${ApiConstants.ghostApiUrl}/ghost/api/content/posts/?key=${ApiConstants.ghostApiKey}'
       );
 
+      print('Fetching from URL: $url'); // Debug log
+
       final response = await _client.get(url);
+      print('Response status code: ${response.statusCode}'); // Debug log
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> posts = data['posts'];
 
         final articles = posts.map((post) => NewsArticle(
-          id: post['slug'],
+          id: post['id'],
           title: post['title'],
-          description: post['excerpt'] ?? '',
-          author: post['authors']?[0]?['name'] ?? 'Unknown',
+          description: post['excerpt'] ?? post['custom_excerpt'] ?? '', // Handle both excerpt types
+          author: 'Amaravati Chamber', // Since authors field is not in the response
           publishedAt: DateTime.parse(post['published_at']),
         )).toList();
 
+        print('Successfully parsed ${articles.length} articles'); // Debug log
         return Right(articles);
       } else {
-        return const Left('Failed to fetch news articles');
+        print('Error response: ${response.body}'); // Debug log
+        return Left('Failed to fetch news articles. Status code: ${response.statusCode}');
       }
-    } catch (e) {
-      return Left(e.toString());
+    } catch (e, stackTrace) {
+      print('Error fetching news: $e'); // Debug log
+      print('Stack trace: $stackTrace'); // Debug log
+      return Left('Error fetching news articles: ${e.toString()}');
     }
   }
 }
