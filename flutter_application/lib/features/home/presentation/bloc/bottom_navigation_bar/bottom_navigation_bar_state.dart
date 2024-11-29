@@ -15,6 +15,12 @@ class BottomNavigationBarState extends Equatable {
       content: WelcomeContent(),
     ),
     const TabItem(
+      tooltip: 'News', // Add new tab
+      label: 'News',
+      icon: Icons.newspaper, // Use appropriate icon
+      content: NewsContent(),
+    ),    
+    const TabItem(
       label: "Settings",
       icon: Icons.settings,
       tooltip: "Settings",
