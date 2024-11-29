@@ -29,13 +29,15 @@ class NewsRepository implements INewsRepository {
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> posts = data['posts'];
 
-        final articles = posts.map((post) => NewsArticle(
-          id: post['id'],
-          title: post['title'],
-          description: post['excerpt'] ?? post['custom_excerpt'] ?? '', // Handle both excerpt types
-          author: 'Amaravati Chamber', // Since authors field is not in the response
-          publishedAt: DateTime.parse(post['published_at']),
-        )).toList();
+      final articles = posts.map((post) => NewsArticle(
+        id: post['id'],
+        title: post['title'],
+        description: post['excerpt'] ?? post['custom_excerpt'] ?? '',
+        author: 'Amaravati Chamber',
+        publishedAt: DateTime.parse(post['published_at']),
+        imageUrl: post['feature_image'] ?? '',
+        htmlContent: post['html'] ?? '',
+      )).toList();
 
         print('Successfully parsed ${articles.length} articles'); // Debug log
         return Right(articles);

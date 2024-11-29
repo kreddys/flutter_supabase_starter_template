@@ -21,6 +21,8 @@ mixin _$NewsArticle {
   String get description => throw _privateConstructorUsedError;
   String get author => throw _privateConstructorUsedError;
   DateTime get publishedAt => throw _privateConstructorUsedError;
+  String get imageUrl => throw _privateConstructorUsedError;
+  String get htmlContent => throw _privateConstructorUsedError;
 
   /// Create a copy of NewsArticle
   /// with the given fields replaced by the non-null parameter values.
@@ -40,7 +42,9 @@ abstract class $NewsArticleCopyWith<$Res> {
       String title,
       String description,
       String author,
-      DateTime publishedAt});
+      DateTime publishedAt,
+      String imageUrl,
+      String htmlContent});
 }
 
 /// @nodoc
@@ -63,6 +67,8 @@ class _$NewsArticleCopyWithImpl<$Res, $Val extends NewsArticle>
     Object? description = null,
     Object? author = null,
     Object? publishedAt = null,
+    Object? imageUrl = null,
+    Object? htmlContent = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -85,6 +91,14 @@ class _$NewsArticleCopyWithImpl<$Res, $Val extends NewsArticle>
           ? _value.publishedAt
           : publishedAt // ignore: cast_nullable_to_non_nullable
               as DateTime,
+      imageUrl: null == imageUrl
+          ? _value.imageUrl
+          : imageUrl // ignore: cast_nullable_to_non_nullable
+              as String,
+      htmlContent: null == htmlContent
+          ? _value.htmlContent
+          : htmlContent // ignore: cast_nullable_to_non_nullable
+              as String,
     ) as $Val);
   }
 }
@@ -102,7 +116,9 @@ abstract class _$$NewsArticleImplCopyWith<$Res>
       String title,
       String description,
       String author,
-      DateTime publishedAt});
+      DateTime publishedAt,
+      String imageUrl,
+      String htmlContent});
 }
 
 /// @nodoc
@@ -123,6 +139,8 @@ class __$$NewsArticleImplCopyWithImpl<$Res>
     Object? description = null,
     Object? author = null,
     Object? publishedAt = null,
+    Object? imageUrl = null,
+    Object? htmlContent = null,
   }) {
     return _then(_$NewsArticleImpl(
       id: null == id
@@ -145,6 +163,14 @@ class __$$NewsArticleImplCopyWithImpl<$Res>
           ? _value.publishedAt
           : publishedAt // ignore: cast_nullable_to_non_nullable
               as DateTime,
+      imageUrl: null == imageUrl
+          ? _value.imageUrl
+          : imageUrl // ignore: cast_nullable_to_non_nullable
+              as String,
+      htmlContent: null == htmlContent
+          ? _value.htmlContent
+          : htmlContent // ignore: cast_nullable_to_non_nullable
+              as String,
     ));
   }
 }
@@ -157,7 +183,9 @@ class _$NewsArticleImpl implements _NewsArticle {
       required this.title,
       required this.description,
       required this.author,
-      required this.publishedAt});
+      required this.publishedAt,
+      required this.imageUrl,
+      required this.htmlContent});
 
   @override
   final String id;
@@ -169,10 +197,14 @@ class _$NewsArticleImpl implements _NewsArticle {
   final String author;
   @override
   final DateTime publishedAt;
+  @override
+  final String imageUrl;
+  @override
+  final String htmlContent;
 
   @override
   String toString() {
-    return 'NewsArticle(id: $id, title: $title, description: $description, author: $author, publishedAt: $publishedAt)';
+    return 'NewsArticle(id: $id, title: $title, description: $description, author: $author, publishedAt: $publishedAt, imageUrl: $imageUrl, htmlContent: $htmlContent)';
   }
 
   @override
@@ -186,12 +218,16 @@ class _$NewsArticleImpl implements _NewsArticle {
                 other.description == description) &&
             (identical(other.author, author) || other.author == author) &&
             (identical(other.publishedAt, publishedAt) ||
-                other.publishedAt == publishedAt));
+                other.publishedAt == publishedAt) &&
+            (identical(other.imageUrl, imageUrl) ||
+                other.imageUrl == imageUrl) &&
+            (identical(other.htmlContent, htmlContent) ||
+                other.htmlContent == htmlContent));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, id, title, description, author, publishedAt);
+  int get hashCode => Object.hash(runtimeType, id, title, description, author,
+      publishedAt, imageUrl, htmlContent);
 
   /// Create a copy of NewsArticle
   /// with the given fields replaced by the non-null parameter values.
@@ -208,7 +244,9 @@ abstract class _NewsArticle implements NewsArticle {
       required final String title,
       required final String description,
       required final String author,
-      required final DateTime publishedAt}) = _$NewsArticleImpl;
+      required final DateTime publishedAt,
+      required final String imageUrl,
+      required final String htmlContent}) = _$NewsArticleImpl;
 
   @override
   String get id;
@@ -220,6 +258,10 @@ abstract class _NewsArticle implements NewsArticle {
   String get author;
   @override
   DateTime get publishedAt;
+  @override
+  String get imageUrl;
+  @override
+  String get htmlContent;
 
   /// Create a copy of NewsArticle
   /// with the given fields replaced by the non-null parameter values.

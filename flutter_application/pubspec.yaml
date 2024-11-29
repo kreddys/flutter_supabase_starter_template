@@ -28,6 +28,7 @@ dependencies:
   freezed_annotation: ^2.4.4
   dartz: ^0.10.1
   http: ^1.1.0
+  flutter_html: ^3.0.0-alpha.5
 
 dev_dependencies:
   flutter_test:

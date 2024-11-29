@@ -10,5 +10,7 @@ class NewsArticle with _$NewsArticle {
     required String description,
     required String author,
     required DateTime publishedAt,
+    required String imageUrl,
+    required String htmlContent,
   }) = _NewsArticle;
-} 
+}
