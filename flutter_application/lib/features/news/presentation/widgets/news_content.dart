@@ -11,26 +11,31 @@ class NewsContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => getIt<NewsCubit>()..loadNews(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('News'),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(60),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: SearchBar(
-                hintText: 'Search articles...',
-                leading: const Icon(Icons.search),
-                onChanged: (value) {
-                  context.read<NewsCubit>().searchArticles(value);
-                },
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('News'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: BlocProvider(
+            create: (context) => getIt<NewsCubit>()..loadNews(),
+            child: Builder(
+              builder: (context) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: SearchBar(
+                  hintText: 'Search articles...',
+                  leading: const Icon(Icons.search),
+                  onChanged: (value) {
+                    context.read<NewsCubit>().searchArticles(value);
+                  },
+                ),
               ),
             ),
           ),
         ),
-        body: BlocBuilder<NewsCubit, NewsState>(
+      ),
+      body: BlocProvider(
+        create: (context) => getIt<NewsCubit>()..loadNews(),
+        child: BlocBuilder<NewsCubit, NewsState>(
           builder: (context, state) {
             return state.when(
               initial: () => const SizedBox(),
