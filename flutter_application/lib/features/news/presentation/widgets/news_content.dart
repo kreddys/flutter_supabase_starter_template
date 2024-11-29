@@ -35,6 +35,8 @@ class _NewsContentState extends State<NewsContent> {
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
+          // Add a debug print to verify this is being called
+          print('Loading more articles...');
       context.read<NewsCubit>().loadMoreArticles();
     }
   }
@@ -66,72 +68,88 @@ class _NewsContentState extends State<NewsContent> {
               child: CircularProgressIndicator(),
             ),
             loaded: (articles, isLoadingMore, hasMoreData) => articles.isEmpty
-                ? const Center(
-                    child: Text('No articles found'),
-                  )
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16.0),
-                    itemCount: articles.length + (isLoadingMore ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index == articles.length) {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
-                      }
+    ? const Center(
+        child: Text('No articles found'),
+      )
+    : RefreshIndicator(
+        onRefresh: () async {
+          await context.read<NewsCubit>().loadNews();
+        },
+        child: ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.all(16.0),
+          itemCount: articles.length + (hasMoreData ? 1 : 0),
+          itemBuilder: (context, index) {
+            // Show loading indicator at the bottom
+            if (index == articles.length) {
+              return isLoadingMore
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  : const SizedBox(); // Empty widget when not loading more
+            }
 
-                      final article = articles[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 16.0),
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ArticleDetailScreen(
-                                  article: article,
-                                ),
-                              ),
-                            );
-                          },
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (article.imageUrl.isNotEmpty)
-                                Image.network(
-                                  article.imageUrl,
-                                  width: double.infinity,
-                                  height: 200,
-                                  fit: BoxFit.cover,
-                                ),
-                              Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      article.title,
-                                      style: Theme.of(context).textTheme.titleLarge,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      article.description,
-                                      style: Theme.of(context).textTheme.bodyMedium,
-                                      maxLines: 3,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+            final article = articles[index];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 16.0),
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ArticleDetailScreen(
+                        article: article,
+                      ),
+                    ),
+                  );
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (article.imageUrl.isNotEmpty)
+                      Image.network(
+                        article.imageUrl,
+                        width: double.infinity,
+                        height: 200,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const SizedBox(
+                            height: 200,
+                            child: Center(
+                              child: Icon(Icons.error),
+                            ),
+                          );
+                        },
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            article.title,
+                            style: Theme.of(context).textTheme.titleLarge,
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                          const SizedBox(height: 8),
+                          Text(
+                            article.description,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
             error: (message) => Center(
               child: Text('Error: $message'),
             ),
