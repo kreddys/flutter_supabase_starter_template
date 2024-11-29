@@ -16,6 +16,19 @@ class NewsContent extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('News'),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(60),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: SearchBar(
+                hintText: 'Search articles...',
+                leading: const Icon(Icons.search),
+                onChanged: (value) {
+                  context.read<NewsCubit>().searchArticles(value);
+                },
+              ),
+            ),
+          ),
         ),
         body: BlocBuilder<NewsCubit, NewsState>(
           builder: (context, state) {
@@ -24,59 +37,63 @@ class NewsContent extends StatelessWidget {
               loading: () => const Center(
                 child: CircularProgressIndicator(),
               ),
-              loaded: (articles) => ListView.builder(
-                padding: const EdgeInsets.all(16.0),
-                itemCount: articles.length,
-                itemBuilder: (context, index) {
-                  final article = articles[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 16.0),
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ArticleDetailScreen(
-                              article: article,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (article.imageUrl.isNotEmpty)
-                            Image.network(
-                              article.imageUrl,
-                              width: double.infinity,
-                              height: 200,
-                              fit: BoxFit.cover,
-                            ),
-                          Padding(
-                            padding: const EdgeInsets.all(16.0),
+              loaded: (articles) => articles.isEmpty
+                  ? const Center(
+                      child: Text('No articles found'),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16.0),
+                      itemCount: articles.length,
+                      itemBuilder: (context, index) {
+                        final article = articles[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 16.0),
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ArticleDetailScreen(
+                                    article: article,
+                                  ),
+                                ),
+                              );
+                            },
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  article.title,
-                                  style: Theme.of(context).textTheme.titleLarge,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  article.description,
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
+                                if (article.imageUrl.isNotEmpty)
+                                  Image.network(
+                                    article.imageUrl,
+                                    width: double.infinity,
+                                    height: 200,
+                                    fit: BoxFit.cover,
+                                  ),
+                                Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        article.title,
+                                        style: Theme.of(context).textTheme.titleLarge,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        article.description,
+                                        style: Theme.of(context).textTheme.bodyMedium,
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
               error: (message) => Center(
                 child: Text('Error: $message'),
               ),

@@ -17,7 +17,7 @@ void main() async {
     const FlutterSupabaseStarterApp(),
   );
 }
-
+n
 Future<void> _initializeSupabase() async {
   await Supabase.initialize(
     url: "https://kmisqlvoiofymxicxiwv.supabase.co",
