@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_html/flutter_html.dart';
 import '../../domain/entities/news_article.dart';
-import 'package:flutter/material.dart';
 
 class ArticleDetailScreen extends StatelessWidget {
   final NewsArticle article;
@@ -73,38 +72,49 @@ class ArticleDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Html(
-  data: article.htmlContent,
-  style: {
-    "body": Style(
-      fontSize: FontSize(15),
-      color: CupertinoColors.label,
-      margin: Margins.zero,
-      padding: HtmlPaddings.zero,
-    ),
-    "a": Style(
-      textDecoration: TextDecoration.none,
-      color: CupertinoColors.activeBlue,
-    ),
-    "u": Style(
-      textDecoration: TextDecoration.none,
-    ),
-    "span": Style(
-      textDecoration: TextDecoration.none,
-      backgroundColor: Colors.transparent,
-    ),
-    "p": Style(
-      margin: Margins.zero,
-      padding: HtmlPaddings.zero,
-    ),
-    "*": Style(
-      backgroundColor: Colors.transparent,
-      textDecoration: TextDecoration.none,
-    ),
-  },
-  onLinkTap: (url, _, __) {
-    // Handle link taps if needed
-  },
-),
+                      data: article.htmlContent,
+                      style: {
+                        "body": Style(
+                          fontSize: FontSize(15),
+                          color: CupertinoColors.label,
+                          margin: Margins.zero,
+                          padding: HtmlPaddings.zero,
+                          fontWeight: FontWeight.normal, // Add this to ensure normal weight
+                        ),
+                        "a": Style(
+                          textDecoration: TextDecoration.none,
+                          color: CupertinoColors.activeBlue,
+                        ),
+                        "u": Style(
+                          textDecoration: TextDecoration.none,
+                        ),
+                        "span": Style(
+                          textDecoration: TextDecoration.none,
+                          backgroundColor: CupertinoColors.systemBackground, // Changed to Cupertino color
+                        ),
+                        "p": Style(
+                          margin: Margins.zero,
+                          padding: HtmlPaddings.zero,
+                          fontWeight: FontWeight.normal, // Add this to ensure normal weight
+                        ),
+                        "h1, h2, h3, h4, h5, h6": Style(
+                          backgroundColor: CupertinoColors.systemBackground,
+                          textDecoration: TextDecoration.none,
+                          fontWeight: FontWeight.bold, // Keep headers bold
+                          margin: Margins.zero,
+                          padding: HtmlPaddings.zero,
+                        ),
+                        "*": Style(
+                          backgroundColor: CupertinoColors.systemBackground,
+                          textDecoration: TextDecoration.none,
+                          margin: Margins.zero,
+                          padding: HtmlPaddings.zero,
+                        ),
+                      },
+                      onLinkTap: (url, _, __) {
+                        // Handle link taps if needed
+                      },
+                    ),
                   ],
                 ),
               ),
