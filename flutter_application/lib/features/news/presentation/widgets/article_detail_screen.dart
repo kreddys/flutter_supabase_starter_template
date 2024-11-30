@@ -48,13 +48,28 @@ class ArticleDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      article.title,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: CupertinoColors.label,
-                      ),
+                    Html(
+                      data: article.title,
+                      style: {
+                        "body": Style(
+                          fontSize: FontSize(22),
+                          color: CupertinoColors.label,
+                          margin: Margins.zero,
+                          padding: HtmlPaddings.zero,
+                          fontWeight: FontWeight.bold,
+                          backgroundColor: CupertinoColors.systemBackground,
+                        ),
+                        "span": Style(
+                          textDecoration: TextDecoration.none,
+                          backgroundColor: CupertinoColors.systemBackground,
+                        ),
+                        "*": Style(
+                          backgroundColor: CupertinoColors.systemBackground,
+                          textDecoration: TextDecoration.none,
+                          margin: Margins.zero,
+                          padding: HtmlPaddings.zero,
+                        ),
+                      },
                     ),
                     const SizedBox(height: 8),
                     Row(
