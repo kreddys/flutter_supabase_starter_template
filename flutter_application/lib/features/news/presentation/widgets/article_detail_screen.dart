@@ -11,10 +11,16 @@ class ArticleDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
+        backgroundColor: CupertinoColors.systemBackground,
         middle: Text(
           article.title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: CupertinoColors.label,
+            backgroundColor: CupertinoColors.systemBackground,
+            decoration: TextDecoration.none,
+          )
         ),
       ),
       child: SafeArea(
