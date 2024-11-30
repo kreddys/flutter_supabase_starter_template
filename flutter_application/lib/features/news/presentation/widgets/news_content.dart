@@ -48,7 +48,6 @@ class _NewsContentState extends State<NewsContent> {
 
 void _showSearchModal(BuildContext context) {
   print('NewsContent: About to show search modal');
-  // Capture the NewsCubit reference before showing the modal
   final newsCubit = context.read<NewsCubit>();
   
   showCupertinoModalPopup(
@@ -56,9 +55,9 @@ void _showSearchModal(BuildContext context) {
     builder: (context) {
       print('NewsContent: Building search modal');
       return BlocProvider.value(
-        value: newsCubit, // Provide the captured cubit to the modal
+        value: newsCubit,
         child: Container(
-          height: MediaQuery.of(context).size.height * 0.7,
+          height: MediaQuery.of(context).size.height * 0.5, // Reduced height
           decoration: BoxDecoration(
             color: CupertinoColors.systemBackground,
             borderRadius: const BorderRadius.vertical(
@@ -82,6 +81,29 @@ void _showSearchModal(BuildContext context) {
                   onChanged: (value) {
                     print('NewsContent: Search query: $value');
                     newsCubit.searchArticles(value);
+                  },
+                ),
+              ),
+              Expanded(
+                child: BlocBuilder<NewsCubit, NewsState>(
+                  builder: (context, state) {
+                    return state.when(
+                      initial: () => const SizedBox(),
+                      loading: () => const Center(
+                        child: CupertinoActivityIndicator(),
+                      ),
+                      loaded: (articles, isLoadingMore, hasMoreData) {
+                        return ListView(
+                          padding: const EdgeInsets.all(16.0), // Correct usage of padding
+                          children: articles
+                              .map((article) => _buildSearchResultItem(context, article))
+                              .toList(),
+                        );
+                      },
+                      error: (message) => Center(
+                        child: Text('Error: $message'),
+                      ),
+                    );
                   },
                 ),
               ),
