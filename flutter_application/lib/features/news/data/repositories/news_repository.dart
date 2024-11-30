@@ -26,7 +26,7 @@ class NewsRepository implements INewsRepository {
 
       // Apply search filter if provided
       final filteredQuery = searchQuery != null && searchQuery.isNotEmpty
-          ? query.textSearch('title', searchQuery)
+          ? query.ilike('title', '%$searchQuery%')
           : query;
 
       // Execute the query with pagination and ordering
