@@ -1,16 +1,14 @@
 import 'package:injectable/injectable.dart';
 import 'package:dartz/dartz.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/news_article.dart';
 import '../../domain/repositories/i_news_repository.dart';
-import '../../../../core/constants/api_constants.dart';
 
-@LazySingleton(as: INewsRepository) 
+@LazySingleton(as: INewsRepository)
 class NewsRepository implements INewsRepository {
-  final http.Client _client;
+  final SupabaseClient _supabaseClient;
 
-  NewsRepository(this._client);
+  NewsRepository(this._supabaseClient);
 
   @override
   Future<Either<String, List<NewsArticle>>> getNewsArticles({
@@ -19,46 +17,39 @@ class NewsRepository implements INewsRepository {
     String? searchQuery,
   }) async {
     try {
-      // Build query parameters
-      final queryParams = {
-        'key': ApiConstants.ghostApiKey,
-        'page': page.toString(),
-        'limit': itemsPerPage.toString(),
-        if (searchQuery != null && searchQuery.isNotEmpty) 'search': searchQuery,
-      };
+      final offset = (page - 1) * itemsPerPage;
 
-      // Create URL with query parameters
-      final url = Uri.parse('${ApiConstants.ghostApiUrl}/ghost/api/content/posts/')
-          .replace(queryParameters: queryParams);
+      // Start with a base query
+      final query = _supabaseClient
+          .from('articles')
+          .select();
 
-      print('Fetching from URL: $url'); // Debug log
+      // Apply search filter if provided
+      final filteredQuery = searchQuery != null && searchQuery.isNotEmpty
+          ? query.textSearch('title', searchQuery)
+          : query;
 
-      final response = await _client.get(url);
-      print('Response status code: ${response.statusCode}'); // Debug log
+      // Execute the query with pagination and ordering
+      final response = await filteredQuery
+          .order('published_at', ascending: false)
+          .range(offset, offset + itemsPerPage - 1);
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        final List<dynamic> posts = data['posts'];
+      final List<NewsArticle> articles = (response as List<dynamic>)
+          .map((post) => NewsArticle(
+                id: post['id'],
+                title: post['title'],
+                description: post['description'] ?? '',
+                author: post['author'] ?? 'Amaravati Chamber',
+                publishedAt: DateTime.parse(post['published_at']),
+                imageUrl: post['image_url'] ?? '',
+                htmlContent: post['html_content'] ?? '',
+              ))
+          .toList();
 
-        final articles = posts.map((post) => NewsArticle(
-          id: post['id'],
-          title: post['title'],
-          description: post['excerpt'] ?? post['custom_excerpt'] ?? '',
-          author: 'Amaravati Chamber',
-          publishedAt: DateTime.parse(post['published_at']),
-          imageUrl: post['feature_image'] ?? '',
-          htmlContent: post['html'] ?? '',
-        )).toList();
-
-        print('Successfully parsed ${articles.length} articles'); // Debug log
-        return Right(articles);
-      } else {
-        print('Error response: ${response.body}'); // Debug log
-        return Left('Failed to fetch news articles. Status code: ${response.statusCode}');
-      }
+      return Right(articles);
     } catch (e, stackTrace) {
-      print('Error fetching news: $e'); // Debug log
-      print('Stack trace: $stackTrace'); // Debug log
+      print('Error fetching news: $e');
+      print('Stack trace: $stackTrace');
       return Left('Error fetching news articles: ${e.toString()}');
     }
   }

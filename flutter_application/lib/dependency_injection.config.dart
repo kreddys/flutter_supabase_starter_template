@@ -52,7 +52,6 @@ import 'package:flutter_application/features/user/domain/use_case/change_email_a
 import 'package:flutter_application/features/user/presentation/bloc/change_email_address/change_email_address_cubit.dart'
     as _i75;
 import 'package:get_it/get_it.dart' as _i174;
-import 'package:http/http.dart' as _i519;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:supabase/supabase.dart' as _i590;
 import 'package:supabase_flutter/supabase_flutter.dart' as _i454;
@@ -74,15 +73,11 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i454.FunctionsClient>(() => appModule.functionsClient);
     gh.factory<_i740.BottomNavigationBarCubit>(
         () => _i740.BottomNavigationBarCubit());
-    gh.lazySingleton<_i221.INewsRepository>(
-        () => _i880.NewsRepository(gh<_i519.Client>()));
     gh.factory<_i12.ThemeModeRepository>(() => _i279.ThemeModeHiveRepository());
     gh.factory<_i1023.GetOrSetInitialThemeModeUseCase>(() =>
         _i1023.GetOrSetInitialThemeModeUseCase(gh<_i12.ThemeModeRepository>()));
     gh.factory<_i727.SetThemeModeUseCase>(
         () => _i727.SetThemeModeUseCase(gh<_i12.ThemeModeRepository>()));
-    gh.factory<_i984.NewsCubit>(
-        () => _i984.NewsCubit(gh<_i221.INewsRepository>()));
     gh.factory<_i392.UserRepository>(() => _i763.SupabaseUserRepository(
           gh<_i590.GoTrueClient>(),
           gh<_i590.FunctionsClient>(),
@@ -91,10 +86,14 @@ extension GetItInjectableX on _i174.GetIt {
           gh<_i1023.GetOrSetInitialThemeModeUseCase>(),
           gh<_i727.SetThemeModeUseCase>(),
         ));
+    gh.lazySingleton<_i221.INewsRepository>(
+        () => _i880.NewsRepository(gh<_i454.SupabaseClient>()));
     gh.factory<_i946.AuthRepository>(
         () => _i476.SupabaseAuthRepository(gh<_i454.GoTrueClient>()));
     gh.factory<_i627.ChangeEmailAddressUseCase>(
         () => _i627.ChangeEmailAddressUseCase(gh<_i392.UserRepository>()));
+    gh.factory<_i984.NewsCubit>(
+        () => _i984.NewsCubit(gh<_i221.INewsRepository>()));
     gh.factory<_i603.LogoutUseCase>(
         () => _i603.LogoutUseCase(gh<_i946.AuthRepository>()));
     gh.factory<_i981.GetLoggedInUserUseCase>(
