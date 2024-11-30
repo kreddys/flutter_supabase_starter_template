@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_html/flutter_html.dart';
 import '../../domain/entities/news_article.dart';
 
@@ -9,50 +9,86 @@ class ArticleDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(article.title),
+    return CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(
+        middle: Text(
+          article.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (article.imageUrl.isNotEmpty)
-              Image.network(
-                article.imageUrl,
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-              ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    article.title,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Text(
-                        'By ${article.author}',
-                        style: Theme.of(context).textTheme.bodySmall,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (article.imageUrl.isNotEmpty)
+                Image.network(
+                  article.imageUrl,
+                  width: double.infinity,
+                  height: 200,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const SizedBox(
+                      height: 200,
+                      child: Center(
+                        child: Icon(CupertinoIcons.exclamationmark_circle),
                       ),
-                      const Spacer(),
-                      Text(
-                        _formatDate(article.publishedAt),
-                        style: Theme.of(context).textTheme.bodySmall,
+                    );
+                  },
+                ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      article.title,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: CupertinoColors.label,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Html(data: article.htmlContent),
-                ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text(
+                          'By ${article.author}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: CupertinoColors.secondaryLabel,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          _formatDate(article.publishedAt),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: CupertinoColors.secondaryLabel,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Html(
+                      data: article.htmlContent,
+                      style: {
+                        "a": Style(
+                          textDecoration: TextDecoration.none,
+                          color: CupertinoColors.activeBlue,
+                        ),
+                        "body": Style(
+                          fontSize: FontSize(15),
+                          color: CupertinoColors.label,
+                        ),
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
