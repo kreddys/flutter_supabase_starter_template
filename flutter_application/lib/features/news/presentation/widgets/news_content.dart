@@ -5,6 +5,7 @@ import '../bloc/news_state.dart';
 import 'article_detail_screen.dart';
 import '../../domain/entities/news_article.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_application/dependency_injection.dart';
 
 class NewsContent extends StatefulWidget {
   const NewsContent({super.key});
@@ -52,16 +53,19 @@ class _NewsContentState extends State<NewsContent> {
 
 void _showSearchModal(BuildContext context) {
   print('NewsContent: About to show search modal');
-  final newsCubit = context.read<NewsCubit>();
+  final mainNewsCubit = context.read<NewsCubit>();
+  
+  // Create a new NewsCubit by getting the repository through dependency injection
+  final searchNewsCubit = getIt<NewsCubit>();  // Use your DI container
   
   showCupertinoModalPopup(
     context: context,
     builder: (context) {
       print('NewsContent: Building search modal');
-      return BlocProvider.value(
-        value: newsCubit,
+      return BlocProvider(
+        create: (_) => searchNewsCubit,
         child: Container(
-          height: MediaQuery.of(context).size.height * 0.5, // Reduced height
+          height: MediaQuery.of(context).size.height * 0.5,
           decoration: BoxDecoration(
             color: CupertinoColors.systemBackground,
             borderRadius: const BorderRadius.vertical(
@@ -84,7 +88,7 @@ void _showSearchModal(BuildContext context) {
                 child: CupertinoSearchTextField(
                   onChanged: (value) {
                     print('NewsContent: Search query: $value');
-                    newsCubit.searchAllArticles(value);
+                    searchNewsCubit.searchAllArticles(value);
                   },
                 ),
               ),
@@ -97,8 +101,13 @@ void _showSearchModal(BuildContext context) {
                         child: CupertinoActivityIndicator(),
                       ),
                       loaded: (articles, isLoadingMore, hasMoreData) {
+                        if (articles.isEmpty) {
+                          return const Center(
+                            child: Text('No results found'),
+                          );
+                        }
                         return ListView(
-                          padding: const EdgeInsets.all(16.0), // Correct usage of padding
+                          padding: const EdgeInsets.all(16.0),
                           children: articles
                               .map((article) => _buildSearchResultItem(context, article))
                               .toList(),
@@ -116,8 +125,12 @@ void _showSearchModal(BuildContext context) {
         ),
       );
     },
-  );
+  ).whenComplete(() {
+    // Dispose the search cubit when the modal is closed
+    searchNewsCubit.close();
+  });
 }
+
 
 Widget _buildSearchResultItem(BuildContext context, NewsArticle article) {
   return GestureDetector(

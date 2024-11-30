@@ -8,6 +8,7 @@ import 'news_state.dart';
 class NewsCubit extends Cubit<NewsState> {
   final INewsRepository _newsRepository;
   List<NewsArticle> _allArticles = [];
+  List<NewsArticle> _searchResults = []; // New list for search results
   int _currentPage = 1;
   static const int _itemsPerPage = 10;
   bool _hasMoreData = true;
@@ -102,7 +103,7 @@ class NewsCubit extends Cubit<NewsState> {
   Future<void> searchAllArticles(String query) async {
     if (query.isEmpty) {
       emit(NewsState.loaded(
-        articles: _allArticles,
+        articles: _searchResults = [], // Clear search results
         isLoadingMore: false,
         hasMoreData: _hasMoreData,
       ));
@@ -124,7 +125,7 @@ class NewsCubit extends Cubit<NewsState> {
     result.fold(
       (error) => emit(NewsState.error(error)),
       (articles) {
-        _allArticles = articles; // Update _allArticles with search results
+        _searchResults = articles; // Store search results separately
         emit(NewsState.loaded(
           articles: articles,
           isLoadingMore: false,
@@ -132,6 +133,14 @@ class NewsCubit extends Cubit<NewsState> {
         ));
       },
     );
+  }
+
+  void restoreMainArticles() {
+    emit(NewsState.loaded(
+        articles: _allArticles,
+        isLoadingMore: _isLoadingMore,
+        hasMoreData: _hasMoreData,
+      ));
   }
 
   // Helper method to check if currently loading
