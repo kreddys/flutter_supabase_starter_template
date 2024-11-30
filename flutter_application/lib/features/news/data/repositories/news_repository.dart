@@ -16,12 +16,20 @@ class NewsRepository implements INewsRepository {
   Future<Either<String, List<NewsArticle>>> getNewsArticles({
     int page = 1,
     int itemsPerPage = 10,
+    String? searchQuery,
   }) async {
     try {
-      // Update the URL to include pagination parameters
-      final url = Uri.parse(
-          '${ApiConstants.ghostApiUrl}/ghost/api/content/posts/?key=${ApiConstants.ghostApiKey}&page=$page&limit=$itemsPerPage'
-      );
+      // Build query parameters
+      final queryParams = {
+        'key': ApiConstants.ghostApiKey,
+        'page': page.toString(),
+        'limit': itemsPerPage.toString(),
+        if (searchQuery != null && searchQuery.isNotEmpty) 'search': searchQuery,
+      };
+
+      // Create URL with query parameters
+      final url = Uri.parse('${ApiConstants.ghostApiUrl}/ghost/api/content/posts/')
+          .replace(queryParameters: queryParams);
 
       print('Fetching from URL: $url'); // Debug log
 

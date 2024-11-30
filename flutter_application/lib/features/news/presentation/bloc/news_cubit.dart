@@ -1,4 +1,3 @@
-// lib/features/news/presentation/bloc/news_cubit.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import '../../domain/repositories/i_news_repository.dart';
@@ -75,6 +74,7 @@ class NewsCubit extends Cubit<NewsState> {
     );
   }
 
+  // Local search functionality
   void searchArticles(String query) {
     if (query.isEmpty) {
       emit(NewsState.loaded(
@@ -97,4 +97,58 @@ class NewsCubit extends Cubit<NewsState> {
       hasMoreData: false,
     ));
   }
+
+  // API-based search functionality
+  Future<void> searchAllArticles(String query) async {
+    if (query.isEmpty) {
+      emit(NewsState.loaded(
+        articles: _allArticles,
+        isLoadingMore: false,
+        hasMoreData: _hasMoreData,
+      ));
+      return;
+    }
+
+    emit(const NewsState.loading());
+
+    // Reset pagination values
+    _currentPage = 1;
+    _hasMoreData = true;
+    
+    final result = await _newsRepository.getNewsArticles(
+      page: _currentPage,
+      itemsPerPage: 15, // Increased items per page for search
+      searchQuery: query,
+    );
+    
+    result.fold(
+      (error) => emit(NewsState.error(error)),
+      (articles) {
+        _allArticles = articles; // Update _allArticles with search results
+        emit(NewsState.loaded(
+          articles: articles,
+          isLoadingMore: false,
+          hasMoreData: false, // We'll get all relevant results in one call for search
+        ));
+      },
+    );
+  }
+
+  // Helper method to check if currently loading
+  bool get isLoading => state.maybeWhen(
+    loading: () => true,
+    orElse: () => false,
+  );
+
+  // Helper method to get current articles
+  List<NewsArticle> get currentArticles => state.maybeWhen(
+    loaded: (articles, _, __) => articles,
+    orElse: () => [],
+  );
+
+  // Helper method to check if more data is available
+  bool get hasMoreData => state.maybeWhen(
+    loaded: (_, __, hasMore) => hasMore,
+    orElse: () => false,
+  );
 }

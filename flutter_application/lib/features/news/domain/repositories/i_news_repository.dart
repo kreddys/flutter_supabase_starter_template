@@ -5,5 +5,6 @@ abstract class INewsRepository {
   Future<Either<String, List<NewsArticle>>> getNewsArticles({
     int page = 1,
     int itemsPerPage = 10,
+    String? searchQuery,
   });
 }
