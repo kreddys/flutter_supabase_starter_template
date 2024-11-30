@@ -117,7 +117,7 @@ class NewsCubit extends Cubit<NewsState> {
     
     final result = await _newsRepository.getNewsArticles(
       page: _currentPage,
-      itemsPerPage: 15, // Increased items per page for search
+      itemsPerPage: 999999, // Increased items per page for search
       searchQuery: query,
     );
     

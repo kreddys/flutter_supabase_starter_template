@@ -84,7 +84,7 @@ void _showSearchModal(BuildContext context) {
                 child: CupertinoSearchTextField(
                   onChanged: (value) {
                     print('NewsContent: Search query: $value');
-                    newsCubit.searchArticles(value);
+                    newsCubit.searchAllArticles(value);
                   },
                 ),
               ),
