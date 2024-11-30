@@ -1,10 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_application/core/constants/urls.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_application/core/constants/spacings.dart';
 import 'package:flutter_application/core/extensions/build_context_extensions.dart';
-import 'package:flutter_application/core/extensions/string_extensions.dart';
-import 'package:url_launcher/url_launcher.dart';
-
-import '../../../../core/constants/spacings.dart';
 
 class WelcomeContent extends StatelessWidget {
   const WelcomeContent({
@@ -13,11 +9,11 @@ class WelcomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // appBar: AppBar(
-      //   title: const Text("Flutter Supabase Starter"),
-      // ),
-      body: SafeArea(
+    return CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('Amaravati News'),
+      ),
+      child: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(Spacing.s16),
@@ -25,26 +21,11 @@ class WelcomeContent extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  "Welcome",
-                  style: context.textTheme.headlineMedium,
-                ),
+                _WelcomeBanner(),
                 const SizedBox(height: Spacing.s16),
-                const _AuthorInfo(),
+                _FeaturedCategories(),
                 const SizedBox(height: Spacing.s16),
-                Text(
-                  "Contact",
-                  style: context.textTheme.headlineMedium,
-                ),
-                const SizedBox(height: Spacing.s16),
-                _ContactDetails(),
-                const SizedBox(height: Spacing.s16),
-                Text(
-                  "Available features",
-                  style: context.textTheme.headlineMedium,
-                ),
-                const SizedBox(height: Spacing.s16),
-                _FeaturesList(),
+                _QuickLinks(),
               ],
             ),
           ),
@@ -54,152 +35,168 @@ class WelcomeContent extends StatelessWidget {
   }
 }
 
-class _AuthorInfo extends StatelessWidget {
-  const _AuthorInfo();
-
+class _WelcomeBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const Card.filled(
-      child: Padding(
-        padding: EdgeInsets.all(Spacing.s16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text("Hi"),
-                SizedBox(width: Spacing.s8),
-                Icon(Icons.waving_hand),
-              ],
+    return Container(
+      padding: const EdgeInsets.all(Spacing.s16),
+      decoration: BoxDecoration(
+        color: CupertinoColors.systemBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: CupertinoColors.separator),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Welcome to Amaravati News',
+            style: context.textTheme.headlineSmall,
+          ),
+          const SizedBox(height: Spacing.s8),
+          const Text(
+            'Your trusted source for local news and updates from Amaravati, Andhra Pradesh',
+            style: TextStyle(
+              color: CupertinoColors.secondaryLabel,
+              fontSize: 16,
             ),
-            SizedBox(height: Spacing.s16),
-            Text("I am Milan Petrovic, Software Engineer."),
-            SizedBox(height: Spacing.s16),
-            Text(
-              "Thank you for choosing our Flutter Supabase Starter to save 20+ hours of development time.",
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _ContactDetails extends StatelessWidget {
-  _ContactDetails();
-
-  final _contactItems = [
-    _ContactItem(
-      label: "LinkedIn",
-      description: "Connect with me on LinkedIn.",
-      url: Urls.linkedin,
-    ),
-    _ContactItem(
-      label: "Medium",
-      description: "Follow me on Medium.",
-      url: Urls.medium,
-    ),
-    _ContactItem(
-      label: "Twitter",
-      description: "Follow me on Twitter.",
-      url: Urls.twitter,
-    ),
+class _FeaturedCategories extends StatelessWidget {
+  final List<Map<String, String>> categories = const [
+    {'title': 'Local News', 'icon': '📰'},
+    {'title': 'Government', 'icon': '🏛'},
+    {'title': 'Development', 'icon': '🏗'},
+    {'title': 'Education', 'icon': '🎓'},
+    {'title': 'Culture', 'icon': '🎭'},
+    {'title': 'Events', 'icon': '📅'},
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.s16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
-              children: _contactItems
-                  .map((contactItem) => ListTile(
-                        leading: const Icon(Icons.link),
-                        title: Text(contactItem.label),
-                        subtitle: Text(contactItem.description),
-                        onTap: () => launchUrl(
-                          Uri.parse(contactItem.url),
-                        ),
-                      ))
-                  .toList(),
-            )
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Categories',
+          style: context.textTheme.titleMedium,
         ),
-      ),
+        const SizedBox(height: Spacing.s8),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+          ),
+          itemCount: categories.length,
+          itemBuilder: (context, index) {
+            return Container(
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemBackground,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: CupertinoColors.separator),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    categories[index]['icon']!,
+                    style: const TextStyle(fontSize: 24),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    categories[index]['title']!,
+                    style: const TextStyle(fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }
 
-class _ContactItem {
-  _ContactItem({
-    required this.label,
-    required this.description,
-    required this.url,
-  });
-
-  final String label;
-  final String description;
-  final String url;
-}
-
-class _FeaturesList extends StatelessWidget {
-  _FeaturesList();
-
-  final _features = [
-    _Feature(
-        title: "Clean Architecture",
-        description: "Feature-first approach with domain, data and presentation layers."),
-    _Feature(title: "Dependency injection", description: "Implemented using GetIt and Injectable."),
-    _Feature(title: "State management with BLoC"),
-    _Feature(title: "Navigation with GoRouter"),
-    _Feature(title: "Dark Mode", description: "Theme setup with Dark Mode."),
-    _Feature(title: "Supabase integration"),
-    _Feature(title: "Authentication", description: "Login with magic link and logout."),
-    _Feature(
-        title: "Settings page",
-        description: "Change email address, privacy policy, terms of service, app info."),
-    _Feature(title: "Flutter Native Splash"),
-    _Feature(title: "Flutter Launcher Icons"),
-    _Feature(title: "Google Fonts"),
+class _QuickLinks extends StatelessWidget {
+  final List<Map<String, dynamic>> links = const [
+    {
+      'title': 'Latest Updates',
+      'icon': CupertinoIcons.news,
+      'description': 'Most recent news from Amaravati'
+    },
+    {
+      'title': 'Emergency Contacts',
+      'icon': CupertinoIcons.phone,
+      'description': 'Important contact numbers'
+    },
+    {
+      'title': 'Public Services',
+      'icon': CupertinoIcons.building_2_fill,
+      'description': 'Government services information'
+    },
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Card.outlined(
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.s16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
-              children: _features
-                  .map((feature) => ListTile(
-                        leading: const Icon(Icons.rocket_launch),
-                        title: Text(feature.title),
-                        subtitle:
-                            !feature.description.isNullOrEmpty ? Text(feature.description!) : null,
-                      ))
-                  .toList(),
-            )
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Links',
+          style: context.textTheme.titleMedium,
         ),
-      ),
+        const SizedBox(height: Spacing.s8),
+        ...links.map((link) => Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemBackground,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: CupertinoColors.separator),
+              ),
+              child: CupertinoButton(
+                padding: const EdgeInsets.all(12),
+                onPressed: () {
+                  // Handle navigation
+                },
+                child: Row(
+                  children: [
+                    Icon(link['icon'] as IconData),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            link['title'] as String,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            link['description'] as String,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: CupertinoColors.secondaryLabel,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(CupertinoIcons.chevron_right),
+                  ],
+                ),
+              ),
+            )),
+      ],
     );
   }
-}
-
-class _Feature {
-  _Feature({
-    required this.title,
-    this.description,
-  });
-
-  final String title;
-  final String? description;
 }
