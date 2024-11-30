@@ -48,31 +48,63 @@ class ArticleDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      article.title,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: CupertinoColors.label,
-                      ),
+                    Html(
+                      data: article.title,
+                      style: {
+                        "body": Style(
+                          fontSize: FontSize(22),
+                          color: CupertinoColors.label,
+                          margin: Margins.zero,
+                          padding: HtmlPaddings.zero,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        "*": Style(
+                          backgroundColor: CupertinoColors.systemBackground,
+                          textDecoration: TextDecoration.none,
+                          margin: Margins.zero,
+                          padding: HtmlPaddings.zero,
+                        ),
+                      },
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Text(
-                          'By ${article.author}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: CupertinoColors.secondaryLabel,
-                          ),
+                        Html(
+                          data: 'By ${article.author}',
+                          style: {
+                            "body": Style(
+                              fontSize: FontSize(13),
+                              color: CupertinoColors.secondaryLabel,
+                              margin: Margins.zero,
+                              padding: HtmlPaddings.zero,
+                              fontWeight: FontWeight.normal,
+                            ),
+                            "*": Style(
+                              backgroundColor: CupertinoColors.systemBackground,
+                              textDecoration: TextDecoration.none,
+                              margin: Margins.zero,
+                              padding: HtmlPaddings.zero,
+                            ),
+                          },
                         ),
                         const Spacer(),
-                        Text(
-                          _formatDate(article.publishedAt),
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: CupertinoColors.secondaryLabel,
-                          ),
+                        Html(
+                          data: _formatDate(article.publishedAt),
+                          style: {
+                            "body": Style(
+                              fontSize: FontSize(13),
+                              color: CupertinoColors.secondaryLabel,
+                              margin: Margins.zero,
+                              padding: HtmlPaddings.zero,
+                              fontWeight: FontWeight.normal,
+                            ),
+                            "*": Style(
+                              backgroundColor: CupertinoColors.systemBackground,
+                              textDecoration: TextDecoration.none,
+                              margin: Margins.zero,
+                              padding: HtmlPaddings.zero,
+                            ),
+                          },
                         ),
                       ],
                     ),
@@ -85,7 +117,7 @@ class ArticleDetailScreen extends StatelessWidget {
                           color: CupertinoColors.label,
                           margin: Margins.zero,
                           padding: HtmlPaddings.zero,
-                          fontWeight: FontWeight.normal, // Add this to ensure normal weight
+                          fontWeight: FontWeight.normal,
                         ),
                         "a": Style(
                           textDecoration: TextDecoration.none,
@@ -96,17 +128,17 @@ class ArticleDetailScreen extends StatelessWidget {
                         ),
                         "span": Style(
                           textDecoration: TextDecoration.none,
-                          backgroundColor: CupertinoColors.systemBackground, // Changed to Cupertino color
+                          backgroundColor: CupertinoColors.systemBackground,
                         ),
                         "p": Style(
                           margin: Margins.zero,
                           padding: HtmlPaddings.zero,
-                          fontWeight: FontWeight.normal, // Add this to ensure normal weight
+                          fontWeight: FontWeight.normal,
                         ),
                         "h1, h2, h3, h4, h5, h6": Style(
                           backgroundColor: CupertinoColors.systemBackground,
                           textDecoration: TextDecoration.none,
-                          fontWeight: FontWeight.bold, // Keep headers bold
+                          fontWeight: FontWeight.bold,
                           margin: Margins.zero,
                           padding: HtmlPaddings.zero,
                         ),
