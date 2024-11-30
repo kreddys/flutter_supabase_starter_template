@@ -309,11 +309,9 @@ Widget _buildSearchResultItem(BuildContext context, NewsArticle article) {
     );
   }
 
-  Widget _buildArticleCard(BuildContext context, NewsArticle article) {
-  print('NewsContent: Building article card for: ${article.title}'); // Debug print
+Widget _buildArticleCard(BuildContext context, NewsArticle article) {
   return GestureDetector(
     onTap: () {
-      print('NewsContent: Article card tapped: ${article.title}'); // Debug print
       Navigator.push(
         context,
         CupertinoPageRoute(
@@ -345,7 +343,6 @@ Widget _buildSearchResultItem(BuildContext context, NewsArticle article) {
                 height: 200,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
-                  print('NewsContent: Error loading image for article: ${article.title}'); // Debug print
                   return const SizedBox(
                     height: 200,
                     child: Center(
@@ -360,22 +357,54 @@ Widget _buildSearchResultItem(BuildContext context, NewsArticle article) {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  article.title,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Html(
+                  data: article.title,
+                  style: {
+                    "body": Style(
+                      fontSize: FontSize(17),
+                      color: CupertinoColors.label,
+                      margin: Margins.zero,
+                      padding: HtmlPaddings.zero,
+                      fontWeight: FontWeight.w600,
+                      backgroundColor: CupertinoColors.systemBackground,
+                    ),
+                    "span": Style(
+                      textDecoration: TextDecoration.none,
+                      backgroundColor: CupertinoColors.systemBackground,
+                    ),
+                    "*": Style(
+                      backgroundColor: CupertinoColors.systemBackground,
+                      textDecoration: TextDecoration.none,
+                      margin: Margins.zero,
+                      padding: HtmlPaddings.zero,
+                    ),
+                  },
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  article.description,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: CupertinoColors.secondaryLabel,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 4), // Reduced from 8 to 4
+                Html(
+                  data: article.description,
+                  style: {
+                    "body": Style(
+                      fontSize: FontSize(15),
+                      color: CupertinoColors.secondaryLabel,
+                      margin: Margins.zero,
+                      padding: HtmlPaddings.zero,
+                      fontWeight: FontWeight.normal,
+                      maxLines: 3,
+                      textOverflow: TextOverflow.ellipsis,
+                      backgroundColor: CupertinoColors.systemBackground,
+                    ),
+                    "span": Style(
+                      textDecoration: TextDecoration.none,
+                      backgroundColor: CupertinoColors.systemBackground,
+                    ),
+                    "*": Style(
+                      backgroundColor: CupertinoColors.systemBackground,
+                      textDecoration: TextDecoration.none,
+                      margin: Margins.zero,
+                      padding: HtmlPaddings.zero,
+                    ),
+                  },
                 ),
               ],
             ),
@@ -385,4 +414,6 @@ Widget _buildSearchResultItem(BuildContext context, NewsArticle article) {
     ),
   );
 }
+
+
 }
