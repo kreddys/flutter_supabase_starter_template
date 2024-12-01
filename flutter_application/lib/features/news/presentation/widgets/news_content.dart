@@ -66,9 +66,9 @@ void _showSearchModal(BuildContext context) {
         create: (_) => searchNewsCubit,
         child: Container(
           height: MediaQuery.of(context).size.height * 0.5,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: CupertinoColors.systemBackground,
-            borderRadius: const BorderRadius.vertical(
+            borderRadius: BorderRadius.vertical(
               top: Radius.circular(12),
             ),
           ),
@@ -102,12 +102,12 @@ void _showSearchModal(BuildContext context) {
                       ),
                       loaded: (articles, isLoadingMore, hasMoreData) {
                         if (articles.isEmpty) {
-                          return Center(
+                          return const Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Icon(
-                                  CupertinoIcons.doc_text_search,
+                                  CupertinoIcons.search,
                                   size: 48,
                                   color: CupertinoColors.secondaryLabel,
                                 ),
@@ -122,8 +122,7 @@ void _showSearchModal(BuildContext context) {
                                 ),
                                 const SizedBox(height: 8),
                                 const Text(
-                                  'Try adjusting your search terms\nor check back later',
-                                  textAlign: TextAlign.center,
+                                  'Try different search terms',
                                   style: TextStyle(
                                     fontSize: 15,
                                     color: CupertinoColors.secondaryLabel,
@@ -160,6 +159,11 @@ void _showSearchModal(BuildContext context) {
 
 
 Widget _buildSearchResultItem(BuildContext context, NewsArticle article) {
+  // First check if the article exists and has required data
+  if (article.title.isEmpty) {
+    return const SizedBox.shrink(); // Return empty widget if no article
+  }
+
   return GestureDetector(
     onTap: () {
       Navigator.pop(context);
@@ -236,14 +240,33 @@ Widget _buildSearchResultItem(BuildContext context, NewsArticle article) {
                     ),
                   },
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  _formatDate(article.publishedAt),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: CupertinoColors.secondaryLabel,
+                // Only show author and date if they exist
+                if (article.author.isNotEmpty || article.publishedAt != null) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      if (article.author.isNotEmpty)
+                        Expanded(
+                          child: Text(
+                            'By ${article.author}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: CupertinoColors.secondaryLabel,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      if (article.publishedAt != null)
+                        Text(
+                          _formatDate(article.publishedAt),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: CupertinoColors.secondaryLabel,
+                          ),
+                        ),
+                    ],
                   ),
-                ),
+                ],
               ],
             ),
           ),
