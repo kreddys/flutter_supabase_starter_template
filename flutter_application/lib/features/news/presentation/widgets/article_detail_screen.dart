@@ -79,6 +79,7 @@ class ArticleDetailScreen extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 13,
                             color: CupertinoColors.secondaryLabel,
+                            decoration: TextDecoration.none
                           ),
                         ),
                         const Spacer(),
@@ -87,6 +88,7 @@ class ArticleDetailScreen extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 13,
                             color: CupertinoColors.secondaryLabel,
+                            decoration: TextDecoration.none
                           ),
                         ),
                       ],

@@ -252,6 +252,7 @@ Widget _buildSearchResultItem(BuildContext context, NewsArticle article) {
                             style: const TextStyle(
                               fontSize: 12,
                               color: CupertinoColors.secondaryLabel,
+                              decoration: TextDecoration.none
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -262,6 +263,7 @@ Widget _buildSearchResultItem(BuildContext context, NewsArticle article) {
                           style: const TextStyle(
                             fontSize: 12,
                             color: CupertinoColors.secondaryLabel,
+                            decoration: TextDecoration.none
                           ),
                         ),
                     ],
