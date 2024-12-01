@@ -102,8 +102,35 @@ void _showSearchModal(BuildContext context) {
                       ),
                       loaded: (articles, isLoadingMore, hasMoreData) {
                         if (articles.isEmpty) {
-                          return const Center(
-                            child: Text('No results found'),
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  CupertinoIcons.doc_text_search,
+                                  size: 48,
+                                  color: CupertinoColors.secondaryLabel,
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'No articles found',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                    color: CupertinoColors.label,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Try adjusting your search terms\nor check back later',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: CupertinoColors.secondaryLabel,
+                                  ),
+                                ),
+                              ],
+                            ),
                           );
                         }
                         return ListView(
@@ -255,8 +282,42 @@ Widget _buildSearchResultItem(BuildContext context, NewsArticle article) {
             loaded: (articles, isLoadingMore, hasMoreData) {
               print('NewsContent: Main state - Loaded with ${articles.length} articles');
               return articles.isEmpty
-                  ? const Center(
-                      child: Text('No articles found'),
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            CupertinoIcons.news,
+                            size: 48,
+                            color: CupertinoColors.secondaryLabel,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No articles available',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: CupertinoColors.label,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Check back later for new articles',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: CupertinoColors.secondaryLabel,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          CupertinoButton(
+                            child: const Text('Refresh'),
+                            onPressed: () {
+                              context.read<NewsCubit>().loadNews();
+                            },
+                          ),
+                        ],
+                      ),
                     )
                   : _buildMainContent(articles, isLoadingMore, hasMoreData);
             },
