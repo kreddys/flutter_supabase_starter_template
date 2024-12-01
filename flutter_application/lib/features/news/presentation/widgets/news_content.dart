@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/news_cubit.dart';
 import '../bloc/news_state.dart';
@@ -11,184 +11,164 @@ class NewsContent extends StatefulWidget {
   const NewsContent({super.key});
 
   @override
-  State<NewsContent> createState() {
-    print('NewsContent: Creating State');
-    return _NewsContentState();
-  }
+  State<NewsContent> createState() => _NewsContentState();
 }
 
 class _NewsContentState extends State<NewsContent> {
   final ScrollController _scrollController = ScrollController();
 
   String _formatDate(DateTime date) {
-  return '${date.day}/${date.month}/${date.year}';
-}
+    return '${date.day}/${date.month}/${date.year}';
+  }
 
   @override
   void initState() {
-    print('NewsContent: initState called');
     super.initState();
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      print('NewsContent: Post frame callback - Loading initial news');
       context.read<NewsCubit>().loadNews();
     });
   }
 
   @override
   void dispose() {
-    print('NewsContent: dispose called');
     _scrollController.dispose();
     super.dispose();
   }
 
   void _onScroll() {
-    print('NewsContent: Scroll event detected');
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      print('NewsContent: Reached scroll threshold, loading more articles');
       context.read<NewsCubit>().loadMoreArticles();
     }
   }
 
-void _showSearchModal(BuildContext context) {
-  print('NewsContent: About to show search modal');
-  final mainNewsCubit = context.read<NewsCubit>();
-  
-  // Create a new NewsCubit by getting the repository through dependency injection
-  final searchNewsCubit = getIt<NewsCubit>();  // Use your DI container
-  
-  showCupertinoModalPopup(
-    context: context,
-    builder: (context) {
-      print('NewsContent: Building search modal');
-      return BlocProvider(
-        create: (_) => searchNewsCubit,
-        child: Container(
-          height: MediaQuery.of(context).size.height * 0.5,
-          decoration: const BoxDecoration(
-            color: CupertinoColors.systemBackground,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(12),
+  void _showSearchModal(BuildContext context) {
+    final mainNewsCubit = context.read<NewsCubit>();
+    final searchNewsCubit = getIt<NewsCubit>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      builder: (context) {
+        return BlocProvider(
+          create: (_) => searchNewsCubit,
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.5,
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  height: 4,
+                  width: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Search articles...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      searchNewsCubit.searchAllArticles(value);
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: BlocBuilder<NewsCubit, NewsState>(
+                    builder: (context, state) {
+                      return state.when(
+                        initial: () => const SizedBox(),
+                        loading: () => const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                        loaded: (articles, isLoadingMore, hasMoreData) {
+                          if (articles.isEmpty) {
+                            return const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.search,
+                                    size: 48,
+                                    color: Colors.grey,
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'No articles found',
+                                    style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Try different search terms',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                          return ListView(
+                            padding: const EdgeInsets.all(16.0),
+                            children: articles
+                                .map((article) => _buildSearchResultItem(context, article))
+                                .toList(),
+                          );
+                        },
+                        error: (message) => Center(
+                          child: Text('Error: $message'),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 12),
-                height: 4,
-                width: 40,
-                decoration: BoxDecoration(
-                  color: CupertinoColors.separator,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: CupertinoSearchTextField(
-                  onChanged: (value) {
-                    print('NewsContent: Search query: $value');
-                    searchNewsCubit.searchAllArticles(value);
-                  },
-                ),
-              ),
-              Expanded(
-                child: BlocBuilder<NewsCubit, NewsState>(
-                  builder: (context, state) {
-                    return state.when(
-                      initial: () => const SizedBox(),
-                      loading: () => const Center(
-                        child: CupertinoActivityIndicator(),
-                      ),
-                      loaded: (articles, isLoadingMore, hasMoreData) {
-                        if (articles.isEmpty) {
-                          return const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  CupertinoIcons.search,
-                                  size: 48,
-                                  color: CupertinoColors.secondaryLabel,
-                                ),
-                                const SizedBox(height: 16),
-                                const Text(
-                                  'No articles found',
-                                  style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w600,
-                                    color: CupertinoColors.label,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Try different search terms',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    color: CupertinoColors.secondaryLabel,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-                        return ListView(
-                          padding: const EdgeInsets.all(16.0),
-                          children: articles
-                              .map((article) => _buildSearchResultItem(context, article))
-                              .toList(),
-                        );
-                      },
-                      error: (message) => Center(
-                        child: Text('Error: $message'),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  ).whenComplete(() {
-    // Dispose the search cubit when the modal is closed
-    searchNewsCubit.close();
-  });
-}
-
-
-Widget _buildSearchResultItem(BuildContext context, NewsArticle article) {
-  // First check if the article exists and has required data
-  if (article.title.isEmpty) {
-    return const SizedBox.shrink(); // Return empty widget if no article
+        );
+      },
+    ).whenComplete(() {
+      searchNewsCubit.close();
+    });
   }
 
-  return GestureDetector(
-    onTap: () {
-      Navigator.pop(context);
-      Navigator.push(
-        context,
-        CupertinoPageRoute(
-          builder: (context) => ArticleDetailScreen(article: article),
-        ),
-      );
-    },
-    child: Container(
-      margin: const EdgeInsets.only(bottom: 8.0),
-      padding: const EdgeInsets.all(8.0),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: CupertinoColors.separator,
-          width: 0.5,
-        ),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (article.imageUrl.isNotEmpty) ...[
-            ClipRRect(
+  Widget _buildSearchResultItem(BuildContext context, NewsArticle article) {
+    if (article.title.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return ListTile(
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ArticleDetailScreen(article: article),
+          ),
+        );
+      },
+      leading: article.imageUrl.isNotEmpty
+          ? ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: Image.network(
                 article.imageUrl,
@@ -201,318 +181,203 @@ Widget _buildSearchResultItem(BuildContext context, NewsArticle article) {
                     height: 50,
                     child: Center(
                       child: Icon(
-                        CupertinoIcons.exclamationmark_circle,
+                        Icons.error,
                         size: 20,
                       ),
                     ),
                   );
                 },
               ),
-            ),
-            const SizedBox(width: 8),
-          ],
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Html(
-                  data: article.title,
-                  style: {
-                    "body": Style(
-                      fontSize: FontSize(14),
-                      color: CupertinoColors.label,
-                      margin: Margins.zero,
-                      padding: HtmlPaddings.zero,
-                      fontWeight: FontWeight.w500,
-                      backgroundColor: CupertinoColors.systemBackground,
-                      maxLines: 2,
-                    ),
-                    "span": Style(
-                      textDecoration: TextDecoration.none,
-                      backgroundColor: CupertinoColors.systemBackground,
-                    ),
-                    "*": Style(
-                      backgroundColor: CupertinoColors.systemBackground,
-                      textDecoration: TextDecoration.none,
-                      margin: Margins.zero,
-                      padding: HtmlPaddings.zero,
-                    ),
-                  },
-                ),
-                // Only show author and date if they exist
-                if (article.author.isNotEmpty || article.publishedAt != null) ...[
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      if (article.author.isNotEmpty)
-                        Expanded(
-                          child: Text(
-                            'By ${article.author}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: CupertinoColors.secondaryLabel,
-                              decoration: TextDecoration.none
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      if (article.publishedAt != null)
-                        Text(
-                          _formatDate(article.publishedAt),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: CupertinoColors.secondaryLabel,
-                            decoration: TextDecoration.none
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
+            )
+          : null,
+      title: Text(
+        article.title,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
       ),
-    ),
-  );
-}
+      subtitle: article.author.isNotEmpty || article.publishedAt != null
+          ? Text(
+              [
+                if (article.author.isNotEmpty) 'By ${article.author}',
+                if (article.publishedAt != null) _formatDate(article.publishedAt),
+              ].join(' • '),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+              ),
+            )
+          : null,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    print('NewsContent: Building main widget');
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: const Text('News'),
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
-          child: const Icon(CupertinoIcons.search),
-          onPressed: () => _showSearchModal(context),
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('News'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () => _showSearchModal(context),
+          ),
+        ],
       ),
-      child: BlocBuilder<NewsCubit, NewsState>(
+      body: BlocBuilder<NewsCubit, NewsState>(
         builder: (context, state) {
-          print('NewsContent: Building main content for state: ${state.runtimeType}');
           return state.when(
-            initial: () {
-              print('NewsContent: Main state - Initial');
-              return const SizedBox();
-            },
-            loading: () {
-              print('NewsContent: Main state - Loading');
-              return const Center(
-                child: CupertinoActivityIndicator(),
-              );
-            },
+            initial: () => const SizedBox(),
+            loading: () => const Center(
+              child: CircularProgressIndicator(),
+            ),
             loaded: (articles, isLoadingMore, hasMoreData) {
-              print('NewsContent: Main state - Loaded with ${articles.length} articles');
-              return articles.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            CupertinoIcons.news,
-                            size: 48,
-                            color: CupertinoColors.secondaryLabel,
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'No articles available',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                              color: CupertinoColors.label,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Check back later for new articles',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: CupertinoColors.secondaryLabel,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          CupertinoButton(
-                            child: const Text('Refresh'),
-                            onPressed: () {
-                              context.read<NewsCubit>().loadNews();
-                            },
-                          ),
-                        ],
+              if (articles.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.article,
+                        size: 48,
+                        color: Colors.grey,
                       ),
-                    )
-                  : _buildMainContent(articles, isLoadingMore, hasMoreData);
-            },
-            error: (message) {
-              print('NewsContent: Main state - Error: $message');
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Error: $message'),
-                    CupertinoButton(
-                      child: const Text('Retry'),
-                      onPressed: () {
-                        print('NewsContent: Retry button pressed');
-                        context.read<NewsCubit>().loadNews();
-                      },
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      Text(
+                        'No articles available',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Check back later for new articles',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => context.read<NewsCubit>().loadNews(),
+                        child: const Text('Refresh'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return RefreshIndicator(
+                onRefresh: () async {
+                  await context.read<NewsCubit>().loadNews();
+                },
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: articles.length + (hasMoreData ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == articles.length) {
+                      return isLoadingMore
+                          ? const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: CircularProgressIndicator(),
+                              ),
+                            )
+                          : const SizedBox();
+                    }
+                    return _buildArticleCard(context, articles[index]);
+                  },
                 ),
               );
             },
+            error: (message) => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Error: $message'),
+                  ElevatedButton(
+                    onPressed: () => context.read<NewsCubit>().loadNews(),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildMainContent(List<NewsArticle> articles, bool isLoadingMore, bool hasMoreData) {
-    print('NewsContent: Building main content with ${articles.length} articles');
-    return CustomScrollView(
-      controller: _scrollController,
-      slivers: [
-        CupertinoSliverRefreshControl(
-          onRefresh: () async {
-            print('NewsContent: Pull-to-refresh triggered');
-            await context.read<NewsCubit>().loadNews();
-          },
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.all(16.0),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                if (index == articles.length) {
-                  print('NewsContent: Showing loading indicator at the bottom');
-                  return isLoadingMore
-                      ? const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: CupertinoActivityIndicator(),
-                          ),
-                        )
-                      : const SizedBox();
-                }
-                print('NewsContent: Building article card at index $index');
-                return _buildArticleCard(context, articles[index]);
-              },
-              childCount: articles.length + (hasMoreData ? 1 : 0),
+  Widget _buildArticleCard(BuildContext context, NewsArticle article) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16.0),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ArticleDetailScreen(article: article),
             ),
-          ),
+          );
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (article.imageUrl.isNotEmpty)
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(4),
+                ),
+                child: Image.network(
+                  article.imageUrl,
+                  width: double.infinity,
+                  height: 200,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const SizedBox(
+                      height: 200,
+                      child: Center(
+                        child: Icon(Icons.error),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Html(
+                    data: article.title,
+                    style: {
+                      "body": Style(
+                        fontSize: FontSize(17),
+                        margin: Margins.zero,
+                        padding: HtmlPaddings.zero,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    },
+                  ),
+                  const SizedBox(height: 4),
+                  Html(
+                    data: article.description,
+                    style: {
+                      "body": Style(
+                        fontSize: FontSize(15),
+                        color: Colors.grey[600],
+                        margin: Margins.zero,
+                        padding: HtmlPaddings.zero,
+                        maxLines: 3,
+                        textOverflow: TextOverflow.ellipsis,
+                      ),
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
-
-Widget _buildArticleCard(BuildContext context, NewsArticle article) {
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        CupertinoPageRoute(
-          builder: (context) => ArticleDetailScreen(article: article),
-        ),
-      );
-    },
-    child: Container(
-      margin: const EdgeInsets.only(bottom: 16.0),
-      decoration: BoxDecoration(
-        color: CupertinoColors.systemBackground,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: CupertinoColors.separator,
-          width: 0.5,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (article.imageUrl.isNotEmpty)
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(8),
-              ),
-              child: Image.network(
-                article.imageUrl,
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const SizedBox(
-                    height: 200,
-                    child: Center(
-                      child: Icon(CupertinoIcons.exclamationmark_circle),
-                    ),
-                  );
-                },
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Html(
-                  data: article.title,
-                  style: {
-                    "body": Style(
-                      fontSize: FontSize(17),
-                      color: CupertinoColors.label,
-                      margin: Margins.zero,
-                      padding: HtmlPaddings.zero,
-                      fontWeight: FontWeight.w600,
-                      backgroundColor: CupertinoColors.systemBackground,
-                    ),
-                    "span": Style(
-                      textDecoration: TextDecoration.none,
-                      backgroundColor: CupertinoColors.systemBackground,
-                    ),
-                    "*": Style(
-                      backgroundColor: CupertinoColors.systemBackground,
-                      textDecoration: TextDecoration.none,
-                      margin: Margins.zero,
-                      padding: HtmlPaddings.zero,
-                    ),
-                  },
-                ),
-                const SizedBox(height: 4), // Reduced from 8 to 4
-                Html(
-                  data: article.description,
-                  style: {
-                    "body": Style(
-                      fontSize: FontSize(15),
-                      color: CupertinoColors.secondaryLabel,
-                      margin: Margins.zero,
-                      padding: HtmlPaddings.zero,
-                      fontWeight: FontWeight.normal,
-                      maxLines: 3,
-                      textOverflow: TextOverflow.ellipsis,
-                      backgroundColor: CupertinoColors.systemBackground,
-                    ),
-                    "span": Style(
-                      textDecoration: TextDecoration.none,
-                      backgroundColor: CupertinoColors.systemBackground,
-                    ),
-                    "*": Style(
-                      backgroundColor: CupertinoColors.systemBackground,
-                      textDecoration: TextDecoration.none,
-                      margin: Margins.zero,
-                      padding: HtmlPaddings.zero,
-                    ),
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-
 }
