@@ -11,37 +11,28 @@ class LoginForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FormWrapper(
-      child: Align(
-        alignment: const Alignment(0, -1 / 3),
+      child: Center( // Center the content vertically
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(
-                Icons.lock_outline,
-                size: 64,
-                color: Theme.of(context).colorScheme.primary,
+              Image.asset(
+                'assets/images/logo.png', // Make sure to add your logo to assets
+                height: 100,
+                width: 100,
               ),
               const SizedBox(height: Spacing.s24),
               Text(
-                "Welcome Back!",
-                style: context.textTheme.displayLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+                "Amaravati Chamber",
+                style: context.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: Spacing.s8),
-              Text(
-                "Please enter your email address to continue.",
-                style: context.textTheme.displayMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: Spacing.s48),
+              const SizedBox(height: Spacing.s32),
               const LoginEmailInput(),
-              const SizedBox(height: Spacing.s24),
+              const SizedBox(height: Spacing.s16),
               const LoginButton(),
             ],
           ),
