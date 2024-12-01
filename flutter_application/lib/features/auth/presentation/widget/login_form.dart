@@ -6,9 +6,7 @@ import 'package:amaravati_chamber/features/auth/presentation/widget/login_button
 import 'package:amaravati_chamber/features/auth/presentation/widget/login_email_input.dart';
 
 class LoginForm extends StatelessWidget {
-  const LoginForm({
-    super.key,
-  });
+  const LoginForm({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,26 +18,30 @@ class LoginForm extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Text(
-                  "Let's get started!",
-                  style: context.textTheme.displayLarge,
-                  softWrap: true,
-                  textAlign: TextAlign.center,
+              Icon(
+                Icons.lock_outline,
+                size: 64,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: Spacing.s24),
+              Text(
+                "Welcome Back!",
+                style: context.textTheme.displayLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: Spacing.s8),
-              Center(
-                child: Text(
-                  "Please enter your email address to continue.",
-                  style: context.textTheme.displayMedium,
-                  softWrap: true,
-                  textAlign: TextAlign.center,
+              Text(
+                "Please enter your email address to continue.",
+                style: context.textTheme.displayMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: Spacing.s48),
               const LoginEmailInput(),
-              const SizedBox(height: Spacing.s16),
+              const SizedBox(height: Spacing.s24),
               const LoginButton(),
             ],
           ),

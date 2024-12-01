@@ -5,9 +5,7 @@ import 'package:amaravati_chamber/core/widgets/email_text_field.dart';
 import 'package:amaravati_chamber/features/auth/presentation/bloc/login/login_cubit.dart';
 
 class LoginEmailInput extends StatelessWidget {
-  const LoginEmailInput({
-    super.key,
-  });
+  const LoginEmailInput({super.key});
 
   @override
   Widget build(BuildContext context) {

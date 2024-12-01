@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:amaravati_chamber/core/extensions/build_context_extensions.dart';
 import 'package:amaravati_chamber/core/widgets/centered_circular_progress_indicator.dart';
+import 'package:amaravati_chamber/core/constants/spacings.dart';
 import 'package:amaravati_chamber/features/auth/presentation/bloc/login/login_cubit.dart';
 import 'package:formz/formz.dart';
 
 class LoginButton extends StatelessWidget {
-  const LoginButton({
-    super.key,
-  });
+  const LoginButton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +22,19 @@ class LoginButton extends StatelessWidget {
                         context.read<LoginCubit>().submitForm();
                       }
                     : null,
-                child: const Text('Login with email'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: Spacing.s16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Login with email',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               );
       },
     );

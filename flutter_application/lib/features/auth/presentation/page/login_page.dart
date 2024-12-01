@@ -13,35 +13,45 @@ import 'package:amaravati_chamber/dependency_injection.dart';
 import '../../../../core/constants/spacings.dart';
 
 class LoginPage extends StatelessWidget {
-  const LoginPage({
-    super.key,
-  });
+  const LoginPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return _AuthBlocListener(
       child: Scaffold(
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(Spacing.s16),
-            child: BlocProvider(
-              create: (context) => getIt<LoginCubit>(),
-              child: BlocListener<LoginCubit, LoginState>(
-                listener: (context, state) {
-                  switch (state.status) {
-                    case FormzSubmissionStatus.failure:
-                      context.showErrorSnackBarMessage(
-                        state.errorMessage ?? 'Failed to sign in. Please try again.',
-                      );
-                      return;
-                    case FormzSubmissionStatus.success:
-                      context.showSnackBarMessage("Email with login link has been sent.");
-                      return;
-                    default:
-                      return;
-                  }
-                },
-                child: const LoginForm(),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                Theme.of(context).colorScheme.background,
+              ],
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(Spacing.s16),
+              child: BlocProvider(
+                create: (context) => getIt<LoginCubit>(),
+                child: BlocListener<LoginCubit, LoginState>(
+                  listener: (context, state) {
+                    switch (state.status) {
+                      case FormzSubmissionStatus.failure:
+                        context.showErrorSnackBarMessage(
+                          state.errorMessage ?? 'Failed to sign in. Please try again.',
+                        );
+                        return;
+                      case FormzSubmissionStatus.success:
+                        context.showSnackBarMessage("Email with login link has been sent.");
+                        return;
+                      default:
+                        return;
+                    }
+                  },
+                  child: const LoginForm(),
+                ),
               ),
             ),
           ),
