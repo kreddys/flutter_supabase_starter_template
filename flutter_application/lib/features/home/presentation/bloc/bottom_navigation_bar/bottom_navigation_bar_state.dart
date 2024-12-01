@@ -10,19 +10,19 @@ class BottomNavigationBarState extends Equatable {
   final tabs = <TabItem>[
     const TabItem(
       label: "Home",
-      icon: CupertinoIcons.home,
+      icon: Icons.home,
       tooltip: "Home",
       content: WelcomeContent(),
     ),
     const TabItem(
       tooltip: 'News',
       label: 'News',
-      icon: CupertinoIcons.news,
+      icon: Icons.newspaper,
       content: NewsContent(),
     ),    
     const TabItem(
       label: "Settings",
-      icon: CupertinoIcons.settings,
+      icon: Icons.settings,
       tooltip: "Settings",
       content: SettingsPage(),
     ),

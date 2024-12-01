@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:amaravati_chamber/dependency_injection.dart';
 import 'package:amaravati_chamber/features/home/presentation/bloc/bottom_navigation_bar/bottom_navigation_bar_cubit.dart';
@@ -25,22 +25,17 @@ class HomePage extends StatelessWidget {
         buildWhen: (previous, current) => 
             current.selectedIndex != previous.selectedIndex,
         builder: (context, state) {
-          return CupertinoPageScaffold(
-            child: SafeArea(
+          return Scaffold(
+            body: SafeArea(
               child: Stack(
                 children: [
                   state.tabs[state.selectedIndex].content,
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: HomeNavigationBar(
-                      selectedIndex: state.selectedIndex,
-                      tabs: state.tabs,
-                    ),
-                  ),
                 ],
               ),
+            ),
+            bottomNavigationBar: HomeNavigationBar(
+              selectedIndex: state.selectedIndex,
+              tabs: state.tabs,
             ),
           );
         },
