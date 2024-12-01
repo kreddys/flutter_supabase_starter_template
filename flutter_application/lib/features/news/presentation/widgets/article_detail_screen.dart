@@ -212,6 +212,56 @@ class ArticleDetailScreen extends StatelessWidget {
                           fontFamily: "monospace",
                         ),
                       },
+                      extensions: [
+                        TagExtension(
+                          tagsToExtend: {"iframe"},
+                          builder: (extensionContext) {
+                            final src = extensionContext.attributes['src'] ?? '';
+                            if (src.contains('youtube.com') || src.contains('youtu.be')) {
+                              String? videoId = getYouTubeVideoId(src);
+                              if (videoId != null) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  child: LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      return Container(
+                                        width: constraints.maxWidth, // Use maximum available width
+                                        height: constraints.maxWidth * 9 / 16, // Maintain 16:9 aspect ratio
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.1),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: YoutubePlayer(
+                                            controller: YoutubePlayerController.fromVideoId(
+                                              videoId: videoId,
+                                              params: const YoutubePlayerParams(
+                                                showControls: true,
+                                                showFullscreenButton: true,
+                                                mute: false,
+                                                playsInline: true,
+                                              ),
+                                            ),
+                                            aspectRatio: 16 / 9,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                );
+                              }
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                      ],
                       onLinkTap: (url, _, __) {
                         if (url != null) {
                           onTapFunction(context, url);
