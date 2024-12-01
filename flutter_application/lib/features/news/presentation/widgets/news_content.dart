@@ -159,9 +159,7 @@ class _NewsContentState extends State<NewsContent> {
           ),
         );
       },
-    ).whenComplete(() {
-      searchNewsCubit.close();
-    });
+    );
   }
 
   Widget _buildSearchResultItem(BuildContext context, NewsArticle article) {

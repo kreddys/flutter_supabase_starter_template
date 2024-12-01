@@ -1,4 +1,6 @@
-import 'package:flutter/cupertino.dart';
+// article_detail_screen.dart
+
+import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import '../../domain/entities/news_article.dart';
 
@@ -9,39 +11,52 @@ class ArticleDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        backgroundColor: CupertinoColors.systemBackground,
-        middle: Text(
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
           article.title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: CupertinoColors.label,
-            backgroundColor: CupertinoColors.systemBackground,
-            decoration: TextDecoration.none,
-          )
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).iconTheme.color,
+          ),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-      child: SafeArea(
+      body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (article.imageUrl.isNotEmpty)
-                Image.network(
-                  article.imageUrl,
-                  width: double.infinity,
-                  height: 200,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const SizedBox(
-                      height: 200,
-                      child: Center(
-                        child: Icon(CupertinoIcons.exclamationmark_circle),
-                      ),
-                    );
-                  },
+                Hero(
+                  tag: article.id ?? article.imageUrl,
+                  child: Image.network(
+                    article.imageUrl,
+                    width: double.infinity,
+                    height: 250,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 250,
+                        color: Theme.of(context).colorScheme.surfaceVariant,
+                        child: Center(
+                          child: Icon(
+                            Icons.error,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -52,90 +67,122 @@ class ArticleDetailScreen extends StatelessWidget {
                       data: article.title,
                       style: {
                         "body": Style(
-                          fontSize: FontSize(22),
-                          color: CupertinoColors.label,
+                          fontSize: FontSize(24),
+                          color: Theme.of(context).textTheme.titleLarge?.color,
                           margin: Margins.zero,
                           padding: HtmlPaddings.zero,
                           fontWeight: FontWeight.bold,
-                          backgroundColor: CupertinoColors.systemBackground,
-                        ),
-                        "span": Style(
-                          textDecoration: TextDecoration.none,
-                          backgroundColor: CupertinoColors.systemBackground,
-                        ),
-                        "*": Style(
-                          backgroundColor: CupertinoColors.systemBackground,
-                          textDecoration: TextDecoration.none,
-                          margin: Margins.zero,
-                          padding: HtmlPaddings.zero,
-                        ),
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Text(
-                          'By ${article.author}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: CupertinoColors.secondaryLabel,
-                            decoration: TextDecoration.none
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          _formatDate(article.publishedAt),
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: CupertinoColors.secondaryLabel,
-                            decoration: TextDecoration.none
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Html(
-                      data: article.htmlContent,
-                      style: {
-                        "body": Style(
-                          fontSize: FontSize(15),
-                          color: CupertinoColors.label,
-                          margin: Margins.zero,
-                          padding: HtmlPaddings.zero,
-                          fontWeight: FontWeight.normal, // Add this to ensure normal weight
-                        ),
-                        "a": Style(
-                          textDecoration: TextDecoration.none,
-                          color: CupertinoColors.activeBlue,
-                        ),
-                        "u": Style(
-                          textDecoration: TextDecoration.none,
-                        ),
-                        "span": Style(
-                          textDecoration: TextDecoration.none,
-                          backgroundColor: CupertinoColors.systemBackground, // Changed to Cupertino color
+                          lineHeight: LineHeight(1.4),
                         ),
                         "p": Style(
                           margin: Margins.zero,
                           padding: HtmlPaddings.zero,
-                          fontWeight: FontWeight.normal, // Add this to ensure normal weight
-                        ),
-                        "h1, h2, h3, h4, h5, h6": Style(
-                          backgroundColor: CupertinoColors.systemBackground,
-                          textDecoration: TextDecoration.none,
-                          fontWeight: FontWeight.bold, // Keep headers bold
-                          margin: Margins.zero,
-                          padding: HtmlPaddings.zero,
                         ),
                         "*": Style(
-                          backgroundColor: CupertinoColors.systemBackground,
-                          textDecoration: TextDecoration.none,
                           margin: Margins.zero,
                           padding: HtmlPaddings.zero,
+                          textDecoration: TextDecoration.none,
+                        ),
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'By ${article.author}',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                            ),
+                          ),
+                        ),
+                        Text(
+                          _formatDate(article.publishedAt),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Html(
+                      data: article.htmlContent,
+                      style: {
+                        "body": Style(
+                          fontSize: FontSize(16),
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                          margin: Margins.zero,
+                          padding: HtmlPaddings.zero,
+                          lineHeight: LineHeight(1.8),
+                        ),
+                        "p": Style(
+                          margin: Margins.only(bottom: 16),
+                          padding: HtmlPaddings.zero,
+                        ),
+                        "a": Style(
+                          color: Theme.of(context).colorScheme.primary,
+                          textDecoration: TextDecoration.none,
+                        ),
+                        "img": Style(
+                          margin: Margins.symmetric(vertical: 16),
+                          padding: HtmlPaddings.zero,
+                        ),
+                        "h1": Style(
+                          fontSize: FontSize(24),
+                          fontWeight: FontWeight.bold,
+                          margin: Margins.only(top: 32, bottom: 16),
+                          color: Theme.of(context).textTheme.titleLarge?.color,
+                          lineHeight: LineHeight(1.4),
+                        ),
+                        "h2": Style(
+                          fontSize: FontSize(20),
+                          fontWeight: FontWeight.bold,
+                          margin: Margins.only(top: 28, bottom: 14),
+                          color: Theme.of(context).textTheme.titleLarge?.color,
+                          lineHeight: LineHeight(1.4),
+                        ),
+                        "h3": Style(
+                          fontSize: FontSize(18),
+                          fontWeight: FontWeight.bold,
+                          margin: Margins.only(top: 24, bottom: 12),
+                          color: Theme.of(context).textTheme.titleLarge?.color,
+                          lineHeight: LineHeight(1.4),
+                        ),
+                        "ul, ol": Style(
+                          margin: Margins.only(bottom: 16, left: 20),
+                          padding: HtmlPaddings.zero,
+                        ),
+                        "li": Style(
+                          margin: Margins.only(bottom: 8),
+                          lineHeight: LineHeight(1.6),
+                        ),
+                        "blockquote": Style(
+                          margin: Margins.symmetric(vertical: 16, horizontal: 16),
+                          padding: HtmlPaddings.all(16),
+                          backgroundColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                          border: Border(
+                            left: BorderSide(
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 4,
+                            ),
+                          ),
+                          fontStyle: FontStyle.italic,
+                        ),
+                        "pre, code": Style(
+                          backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                          padding: HtmlPaddings.all(8),
+                          margin: Margins.symmetric(vertical: 8),
+                          fontFamily: "monospace",
+                        ),
+                        "*": Style(
+                          margin: Margins.zero,
+                          padding: HtmlPaddings.zero,
+                          textDecoration: TextDecoration.none,
                         ),
                       },
                       onLinkTap: (url, _, __) {
                         // Handle link taps if needed
+                        // You could implement url_launcher here
                       },
                     ),
                   ],
