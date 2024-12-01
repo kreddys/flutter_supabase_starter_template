@@ -218,7 +218,7 @@ class _NewsContentState extends State<NewsContent> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('News'),
+        title: Text('Amaravati News'),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),

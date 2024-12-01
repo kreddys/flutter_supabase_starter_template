@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:amaravati_chamber/core/constants/spacings.dart';
 import 'package:amaravati_chamber/core/extensions/build_context_extensions.dart';
@@ -11,16 +11,18 @@ class WelcomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(
-          'Amaravati News',
-          style: context.textTheme.titleMedium?.copyWith(
-            decoration: TextDecoration.none,
-          ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Amaravati Chamber',
+          style: context.textTheme.titleMedium,
         ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        scrolledUnderElevation: 0, // Removes elevation when scrolling
+        surfaceTintColor: Colors.transparent, // Removes surface tint
+        elevation: 0, // Removes default elevation
       ),
-      child: SafeArea(
+      body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(Spacing.s16),
@@ -28,7 +30,7 @@ class WelcomeContent extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _NewsHeader(), // Changed from _WelcomeBanner to _NewsHeader
+                _NewsHeader(),
                 const SizedBox(height: Spacing.s16),
                 _FeaturedCategories(),
                 const SizedBox(height: Spacing.s16),
@@ -45,39 +47,36 @@ class WelcomeContent extends StatelessWidget {
 class _NewsHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(Spacing.s16),
-      decoration: BoxDecoration(
-        color: CupertinoColors.systemBackground,
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: CupertinoColors.separator),
+        side: BorderSide(
+          color: Theme.of(context).dividerColor,
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Welcome to Amaravati News',
-            style: context.textTheme.headlineSmall?.copyWith(
-              decoration: TextDecoration.none,
+      child: Padding(
+        padding: const EdgeInsets.all(Spacing.s16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Welcome!',
+              style: context.textTheme.headlineSmall,
             ),
-          ),
-          const SizedBox(height: Spacing.s8),
-          Text(
-            'Your trusted source for local news and updates from Amaravati, Andhra Pradesh',
-            style: context.textTheme.bodyMedium?.copyWith(
-              color: CupertinoColors.secondaryLabel,
-              decoration: TextDecoration.none,
+            const SizedBox(height: Spacing.s16),
+            Text(
+              'Amaravati Chamber is your trusted source for local news and updates from Amaravati, Andhra Pradesh',
+              style: context.textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
-
-// Rest of the code remains the same...
-
-// ... _WelcomeBanner class remains the same ...
 
 class _FeaturedCategories extends StatelessWidget {
   final List<Map<String, String>> categories = const [
@@ -96,9 +95,7 @@ class _FeaturedCategories extends StatelessWidget {
       children: [
         Text(
           'Categories',
-          style: context.textTheme.titleMedium?.copyWith(
-            decoration: TextDecoration.none,
-          ),
+          style: context.textTheme.titleMedium,
         ),
         const SizedBox(height: Spacing.s8),
         GridView.builder(
@@ -111,33 +108,30 @@ class _FeaturedCategories extends StatelessWidget {
           ),
           itemCount: categories.length,
           itemBuilder: (context, index) {
-            return GestureDetector(
-              onTap: () {
-                // Navigate to news tab (index 1)
-                context.read<BottomNavigationBarCubit>().switchTab(1);
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: CupertinoColors.systemBackground,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: CupertinoColors.separator),
+            return Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: BorderSide(
+                  color: Theme.of(context).dividerColor,
                 ),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () {
+                  context.read<BottomNavigationBarCubit>().switchTab(1);
+                },
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       categories[index]['icon']!,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        decoration: TextDecoration.none,
-                      ),
+                      style: const TextStyle(fontSize: 24),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       categories[index]['title']!,
-                      style: context.textTheme.bodySmall?.copyWith(
-                        decoration: TextDecoration.none,
-                      ),
+                      style: context.textTheme.bodySmall,
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -155,17 +149,17 @@ class _QuickLinks extends StatelessWidget {
   final List<Map<String, dynamic>> links = const [
     {
       'title': 'Latest Updates',
-      'icon': CupertinoIcons.news,
+      'icon': Icons.newspaper,
       'description': 'Most recent news from Amaravati'
     },
     {
       'title': 'Emergency Contacts',
-      'icon': CupertinoIcons.phone,
+      'icon': Icons.phone,
       'description': 'Important contact numbers'
     },
     {
       'title': 'Public Services',
-      'icon': CupertinoIcons.building_2_fill,
+      'icon': Icons.business,
       'description': 'Government services information'
     },
   ];
@@ -177,51 +171,51 @@ class _QuickLinks extends StatelessWidget {
       children: [
         Text(
           'Quick Links',
-          style: context.textTheme.titleMedium?.copyWith(
-            decoration: TextDecoration.none,
-          ),
+          style: context.textTheme.titleMedium,
         ),
         const SizedBox(height: Spacing.s8),
-        ...links.map((link) => Container(
+        ...links.map((link) => Card(
+              elevation: 0,
               margin: const EdgeInsets.only(bottom: 8),
-              decoration: BoxDecoration(
-                color: CupertinoColors.systemBackground,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: CupertinoColors.separator),
+                side: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                ),
               ),
-              child: CupertinoButton(
-                padding: const EdgeInsets.all(12),
-                onPressed: () {
-                  // Navigate to news tab (index 1)
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () {
                   context.read<BottomNavigationBarCubit>().switchTab(1);
                 },
-                child: Row(
-                  children: [
-                    Icon(link['icon'] as IconData),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            link['title'] as String,
-                            style: context.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.none,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(link['icon'] as IconData),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              link['title'] as String,
+                              style: context.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          Text(
-                            link['description'] as String,
-                            style: context.textTheme.bodySmall?.copyWith(
-                              color: CupertinoColors.secondaryLabel,
-                              decoration: TextDecoration.none,
+                            Text(
+                              link['description'] as String,
+                              style: context.textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const Icon(CupertinoIcons.chevron_right),
-                  ],
+                      Icon(Icons.chevron_right),
+                    ],
+                  ),
                 ),
               ),
             )),
