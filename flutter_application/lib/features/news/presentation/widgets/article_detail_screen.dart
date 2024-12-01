@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../../domain/entities/news_article.dart';
-import 'package:html/dom.dart' as dom;
 
 class ArticleDetailScreen extends StatelessWidget {
   final NewsArticle article;
 
   const ArticleDetailScreen({super.key, required this.article});
+
+  void onTapFunction(BuildContext context, String url) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => WebViewScreen(url: url),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -176,6 +184,11 @@ class ArticleDetailScreen extends StatelessWidget {
                           fontFamily: "monospace",
                         ),
                       },
+                      onLinkTap: (url, _, __) {
+                        if (url != null) {
+                          onTapFunction(context, url);
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -189,5 +202,58 @@ class ArticleDetailScreen extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+class WebViewScreen extends StatefulWidget {
+  final String url;
+
+  const WebViewScreen({super.key, required this.url});
+
+  @override
+  State<WebViewScreen> createState() => _WebViewScreenState();
+}
+
+class _WebViewScreenState extends State<WebViewScreen> {
+  late final WebViewController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the WebViewController with the correct configuration
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.white)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onProgress: (int progress) {
+            // You can handle loading progress here
+          },
+          onPageStarted: (String url) {
+            // Handle page load start
+          },
+          onPageFinished: (String url) {
+            // Handle page load complete
+          },
+          onWebResourceError: (WebResourceError error) {
+            // Handle web resource errors
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(widget.url));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('WebView'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: WebViewWidget(controller: _controller),
+    );
   }
 }
