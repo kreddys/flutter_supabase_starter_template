@@ -44,12 +44,12 @@ class _NewsContentState extends State<NewsContent> {
   }
 
   void _showSearchModal(BuildContext context) {
-    final mainNewsCubit = context.read<NewsCubit>();
     final searchNewsCubit = getIt<NewsCubit>();
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
@@ -58,10 +58,11 @@ class _NewsContentState extends State<NewsContent> {
           create: (_) => searchNewsCubit,
           child: Container(
             height: MediaQuery.of(context).size.height * 0.5,
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.vertical(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(12),
               ),
+              color: Theme.of(context).scaffoldBackgroundColor,
             ),
             child: Column(
               children: [
@@ -70,7 +71,7 @@ class _NewsContentState extends State<NewsContent> {
                   height: 4,
                   width: 40,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: Theme.of(context).dividerColor,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -79,9 +80,21 @@ class _NewsContentState extends State<NewsContent> {
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: 'Search articles...',
-                      prefixIcon: const Icon(Icons.search),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Theme.of(context).iconTheme.color,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).dividerColor,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).dividerColor,
+                        ),
                       ),
                     ),
                     onChanged: (value) {
@@ -99,29 +112,25 @@ class _NewsContentState extends State<NewsContent> {
                         ),
                         loaded: (articles, isLoadingMore, hasMoreData) {
                           if (articles.isEmpty) {
-                            return const Center(
+                            return Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(
                                     Icons.search,
                                     size: 48,
-                                    color: Colors.grey,
+                                    color: Theme.of(context).colorScheme.secondary,
                                   ),
-                                  SizedBox(height: 16),
+                                  const SizedBox(height: 16),
                                   Text(
                                     'No articles found',
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: Theme.of(context).textTheme.titleLarge,
                                   ),
-                                  SizedBox(height: 8),
+                                  const SizedBox(height: 8),
                                   Text(
                                     'Try different search terms',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      color: Colors.grey,
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                                     ),
                                   ),
                                 ],
@@ -136,7 +145,10 @@ class _NewsContentState extends State<NewsContent> {
                           );
                         },
                         error: (message) => Center(
-                          child: Text('Error: $message'),
+                          child: Text(
+                            'Error: $message',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
                         ),
                       );
                     },
@@ -176,14 +188,14 @@ class _NewsContentState extends State<NewsContent> {
                 height: 50,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
-                  return const SizedBox(
+                  return Container(
                     width: 50,
                     height: 50,
-                    child: Center(
-                      child: Icon(
-                        Icons.error,
-                        size: 20,
-                      ),
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    child: Icon(
+                      Icons.error,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   );
                 },
@@ -194,10 +206,7 @@ class _NewsContentState extends State<NewsContent> {
         article.title,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
+        style: Theme.of(context).textTheme.titleSmall,
       ),
       subtitle: article.author.isNotEmpty || article.publishedAt != null
           ? Text(
@@ -205,9 +214,8 @@ class _NewsContentState extends State<NewsContent> {
                 if (article.author.isNotEmpty) 'By ${article.author}',
                 if (article.publishedAt != null) _formatDate(article.publishedAt),
               ].join(' • '),
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
               ),
             )
           : null,
@@ -218,10 +226,20 @@ class _NewsContentState extends State<NewsContent> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Amaravati News'),
+        title: Text(
+          'Amaravati News',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: Icon(
+              Icons.search,
+              color: Theme.of(context).iconTheme.color,
+            ),
             onPressed: () => _showSearchModal(context),
           ),
         ],
@@ -239,10 +257,10 @@ class _NewsContentState extends State<NewsContent> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.article,
                         size: 48,
-                        color: Colors.grey,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -253,7 +271,7 @@ class _NewsContentState extends State<NewsContent> {
                       Text(
                         'Check back later for new articles',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey,
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -293,7 +311,11 @@ class _NewsContentState extends State<NewsContent> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Error: $message'),
+                  Text(
+                    'Error: $message',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => context.read<NewsCubit>().loadNews(),
                     child: const Text('Retry'),
@@ -309,8 +331,16 @@ class _NewsContentState extends State<NewsContent> {
 
   Widget _buildArticleCard(BuildContext context, NewsArticle article) {
     return Card(
+      elevation: 0,
       margin: const EdgeInsets.only(bottom: 16.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Theme.of(context).dividerColor,
+        ),
+      ),
       child: InkWell(
+        borderRadius: BorderRadius.circular(12),
         onTap: () {
           Navigator.push(
             context,
@@ -325,7 +355,7 @@ class _NewsContentState extends State<NewsContent> {
             if (article.imageUrl.isNotEmpty)
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(4),
+                  top: Radius.circular(12),
                 ),
                 child: Image.network(
                   article.imageUrl,
@@ -333,10 +363,14 @@ class _NewsContentState extends State<NewsContent> {
                   height: 200,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
-                    return const SizedBox(
+                    return Container(
                       height: 200,
+                      color: Theme.of(context).colorScheme.surfaceVariant,
                       child: Center(
-                        child: Icon(Icons.error),
+                        child: Icon(
+                          Icons.error,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     );
                   },
@@ -355,6 +389,7 @@ class _NewsContentState extends State<NewsContent> {
                         margin: Margins.zero,
                         padding: HtmlPaddings.zero,
                         fontWeight: FontWeight.w600,
+                        color: Theme.of(context).textTheme.titleLarge?.color,
                       ),
                     },
                   ),
@@ -364,7 +399,7 @@ class _NewsContentState extends State<NewsContent> {
                     style: {
                       "body": Style(
                         fontSize: FontSize(15),
-                        color: Colors.grey[600],
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                         margin: Margins.zero,
                         padding: HtmlPaddings.zero,
                         maxLines: 3,
