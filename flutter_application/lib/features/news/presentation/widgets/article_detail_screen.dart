@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';  // Add this import
 import '../../domain/entities/news_article.dart';
 
 class ArticleDetailScreen extends StatelessWidget {
@@ -8,13 +9,40 @@ class ArticleDetailScreen extends StatelessWidget {
 
   const ArticleDetailScreen({super.key, required this.article});
 
-  void onTapFunction(BuildContext context, String url) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => WebViewScreen(url: url),
-      ),
+  // Function to extract YouTube video ID from URL
+  String? getYouTubeVideoId(String url) {
+    // Handle different YouTube URL formats
+    RegExp regExp = RegExp(
+      r'^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*',
     );
+    if (url.contains('youtu')) {
+      Match? match = regExp.firstMatch(url);
+      if (match != null && match.groupCount >= 2) {
+        return match.group(2);
+      }
+    }
+    return null;
+  }
+
+  void onTapFunction(BuildContext context, String url) {
+    String? videoId = getYouTubeVideoId(url);
+    if (videoId != null) {
+      // If it's a YouTube link, open in YouTube player
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => YouTubePlayerScreen(videoId: videoId),
+        ),
+      );
+    } else {
+      // If it's not a YouTube link, open in WebView
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => WebViewScreen(url: url),
+        ),
+      );
+    }
   }
 
   @override
@@ -205,6 +233,63 @@ class ArticleDetailScreen extends StatelessWidget {
   }
 }
 
+// YouTube Player Screen
+class YouTubePlayerScreen extends StatefulWidget {
+  final String videoId;
+
+  const YouTubePlayerScreen({super.key, required this.videoId});
+
+  @override
+  State<YouTubePlayerScreen> createState() => _YouTubePlayerScreenState();
+}
+
+class _YouTubePlayerScreenState extends State<YouTubePlayerScreen> {
+  late YoutubePlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = YoutubePlayerController.fromVideoId(
+      videoId: widget.videoId,
+      params: const YoutubePlayerParams(
+        showControls: true,
+        showFullscreenButton: true,
+        mute: false,                // Start with sound
+        loop: false,                // Don't loop the video
+        enableJavaScript: true,     // Enable JavaScript
+        showVideoAnnotations: false,
+        playsInline: true,         // Play inline on iOS
+        strictRelatedVideos: true, // Only show related videos from the same channel
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('YouTube Video'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: YoutubePlayer(
+        controller: _controller,
+        aspectRatio: 16 / 9,
+      ),
+    );
+  }
+
+}
+
+// WebView Screen (unchanged)
 class WebViewScreen extends StatefulWidget {
   final String url;
 
@@ -220,7 +305,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize the WebViewController with the correct configuration
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.white)
