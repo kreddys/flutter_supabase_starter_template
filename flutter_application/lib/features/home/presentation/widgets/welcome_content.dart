@@ -10,8 +10,13 @@ class WelcomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Amaravati News'),
+      navigationBar: CupertinoNavigationBar(
+        middle: Text(
+          'Amaravati News',
+          style: context.textTheme.titleMedium?.copyWith(
+            decoration: TextDecoration.none,
+          ),
+        ),
       ),
       child: SafeArea(
         child: SingleChildScrollView(
@@ -50,14 +55,16 @@ class _WelcomeBanner extends StatelessWidget {
         children: [
           Text(
             'Welcome to Amaravati News',
-            style: context.textTheme.headlineSmall,
+            style: context.textTheme.headlineSmall?.copyWith(
+              decoration: TextDecoration.none,
+            ),
           ),
           const SizedBox(height: Spacing.s8),
-          const Text(
+          Text(
             'Your trusted source for local news and updates from Amaravati, Andhra Pradesh',
-            style: TextStyle(
+            style: context.textTheme.bodyMedium?.copyWith(
               color: CupertinoColors.secondaryLabel,
-              fontSize: 16,
+              decoration: TextDecoration.none,
             ),
           ),
         ],
@@ -71,7 +78,7 @@ class _FeaturedCategories extends StatelessWidget {
     {'title': 'Local News', 'icon': '📰'},
     {'title': 'Government', 'icon': '🏛'},
     {'title': 'Development', 'icon': '🏗'},
-    {'title': 'Education', 'icon': '🎓'},
+    {'title': 'Education', 'icon': '📚'},
     {'title': 'Culture', 'icon': '🎭'},
     {'title': 'Events', 'icon': '📅'},
   ];
@@ -83,7 +90,9 @@ class _FeaturedCategories extends StatelessWidget {
       children: [
         Text(
           'Categories',
-          style: context.textTheme.titleMedium,
+          style: context.textTheme.titleMedium?.copyWith(
+            decoration: TextDecoration.none,
+          ),
         ),
         const SizedBox(height: Spacing.s8),
         GridView.builder(
@@ -107,12 +116,17 @@ class _FeaturedCategories extends StatelessWidget {
                 children: [
                   Text(
                     categories[index]['icon']!,
-                    style: const TextStyle(fontSize: 24),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      decoration: TextDecoration.none,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     categories[index]['title']!,
-                    style: const TextStyle(fontSize: 12),
+                    style: context.textTheme.bodySmall?.copyWith(
+                      decoration: TextDecoration.none,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -151,7 +165,9 @@ class _QuickLinks extends StatelessWidget {
       children: [
         Text(
           'Quick Links',
-          style: context.textTheme.titleMedium,
+          style: context.textTheme.titleMedium?.copyWith(
+            decoration: TextDecoration.none,
+          ),
         ),
         const SizedBox(height: Spacing.s8),
         ...links.map((link) => Container(
@@ -176,16 +192,16 @@ class _QuickLinks extends StatelessWidget {
                         children: [
                           Text(
                             link['title'] as String,
-                            style: const TextStyle(
-                              fontSize: 16,
+                            style: context.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.none,
                             ),
                           ),
                           Text(
                             link['description'] as String,
-                            style: const TextStyle(
-                              fontSize: 14,
+                            style: context.textTheme.bodySmall?.copyWith(
                               color: CupertinoColors.secondaryLabel,
+                              decoration: TextDecoration.none,
                             ),
                           ),
                         ],
