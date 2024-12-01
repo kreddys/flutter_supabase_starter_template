@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:amaravati_chamber/core/constants/spacings.dart';
 import 'package:amaravati_chamber/core/extensions/build_context_extensions.dart';
+import 'package:amaravati_chamber/features/home/presentation/bloc/bottom_navigation_bar/bottom_navigation_bar_cubit.dart';
 
 class WelcomeContent extends StatelessWidget {
   const WelcomeContent({
@@ -26,7 +28,7 @@ class WelcomeContent extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _WelcomeBanner(),
+                _NewsHeader(), // Changed from _WelcomeBanner to _NewsHeader
                 const SizedBox(height: Spacing.s16),
                 _FeaturedCategories(),
                 const SizedBox(height: Spacing.s16),
@@ -40,7 +42,7 @@ class WelcomeContent extends StatelessWidget {
   }
 }
 
-class _WelcomeBanner extends StatelessWidget {
+class _NewsHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -72,6 +74,10 @@ class _WelcomeBanner extends StatelessWidget {
     );
   }
 }
+
+// Rest of the code remains the same...
+
+// ... _WelcomeBanner class remains the same ...
 
 class _FeaturedCategories extends StatelessWidget {
   final List<Map<String, String>> categories = const [
@@ -105,31 +111,37 @@ class _FeaturedCategories extends StatelessWidget {
           ),
           itemCount: categories.length,
           itemBuilder: (context, index) {
-            return Container(
-              decoration: BoxDecoration(
-                color: CupertinoColors.systemBackground,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: CupertinoColors.separator),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    categories[index]['icon']!,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      decoration: TextDecoration.none,
+            return GestureDetector(
+              onTap: () {
+                // Navigate to news tab (index 1)
+                context.read<BottomNavigationBarCubit>().switchTab(1);
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: CupertinoColors.systemBackground,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: CupertinoColors.separator),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      categories[index]['icon']!,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        decoration: TextDecoration.none,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    categories[index]['title']!,
-                    style: context.textTheme.bodySmall?.copyWith(
-                      decoration: TextDecoration.none,
+                    const SizedBox(height: 4),
+                    Text(
+                      categories[index]['title']!,
+                      style: context.textTheme.bodySmall?.copyWith(
+                        decoration: TextDecoration.none,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },
@@ -180,7 +192,8 @@ class _QuickLinks extends StatelessWidget {
               child: CupertinoButton(
                 padding: const EdgeInsets.all(12),
                 onPressed: () {
-                  // Handle navigation
+                  // Navigate to news tab (index 1)
+                  context.read<BottomNavigationBarCubit>().switchTab(1);
                 },
                 child: Row(
                   children: [
