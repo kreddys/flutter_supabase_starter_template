@@ -18,7 +18,6 @@ class ChangeEmailAddressPage extends StatelessWidget {
     return BlocProvider(
       create: (context) => getIt<ChangeEmailAddressCubit>(),
       child: Scaffold(
-        appBar: AppBar(),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(Spacing.s16),
@@ -31,8 +30,9 @@ class ChangeEmailAddressPage extends StatelessWidget {
                     );
                     return;
                   case FormzSubmissionStatus.success:
-                    context
-                        .showSnackBarMessage("Email with change email address details are sent.");
+                    context.showSnackBarMessage(
+                      "Email with change email address details are sent."
+                    );
                     return;
                   default:
                     return;

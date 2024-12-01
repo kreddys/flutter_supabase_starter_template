@@ -13,26 +13,41 @@ class ChangeEmailAddressForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FormWrapper(
-      child: Align(
-        alignment: Alignment(0, -1 / 3),
+      child: Center( // Added Center widget like in LoginForm
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Image.asset(
+                'assets/images/logo.png',
+                height: 100,
+                width: 100,
+              ),
+              const SizedBox(height: Spacing.s24),
+              Text(
+                "Amaravati Chamber",
+                style: context.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: Spacing.s32),
               Text(
                 "Change email address",
                 style: context.textTheme.headlineLarge,
+                textAlign: TextAlign.center, // Added center alignment
               ),
-              SizedBox(height: Spacing.s16),
-              Text(
+              const SizedBox(height: Spacing.s16),
+              const Text(
                 "You will be required to confirm an email change to new email address.",
                 softWrap: true,
+                textAlign: TextAlign.center, // Added center alignment
               ),
-              SizedBox(height: Spacing.s16),
-              ChangeEmailAddressEmailInput(),
-              SizedBox(height: Spacing.s16),
-              ChangeEmailAddressButton(),
+              const SizedBox(height: Spacing.s16),
+              const ChangeEmailAddressEmailInput(),
+              const SizedBox(height: Spacing.s16),
+              const ChangeEmailAddressButton(),
             ],
           ),
         ),
