@@ -1,8 +1,8 @@
-// article_detail_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../domain/entities/news_article.dart';
+import 'package:html/dom.dart' as dom;
 
 class ArticleDetailScreen extends StatelessWidget {
   final NewsArticle article;
@@ -38,7 +38,7 @@ class ArticleDetailScreen extends StatelessWidget {
             children: [
               if (article.imageUrl.isNotEmpty)
                 Hero(
-                  tag: article.id ?? article.imageUrl,
+                  tag: article.id,
                   child: Image.network(
                     article.imageUrl,
                     width: double.infinity,
@@ -92,15 +92,15 @@ class ArticleDetailScreen extends StatelessWidget {
                           child: Text(
                             'By ${article.author}',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                            ),
+                                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                                ),
                           ),
                         ),
                         Text(
                           _formatDate(article.publishedAt),
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                          ),
+                                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                              ),
                         ),
                       ],
                     ),
@@ -121,11 +121,12 @@ class ArticleDetailScreen extends StatelessWidget {
                         ),
                         "a": Style(
                           color: Theme.of(context).colorScheme.primary,
-                          textDecoration: TextDecoration.none,
+                          textDecoration: TextDecoration.underline,
                         ),
                         "img": Style(
+                          width: Width(MediaQuery.of(context).size.width - 32),
+                          alignment: Alignment.center,
                           margin: Margins.symmetric(vertical: 16),
-                          padding: HtmlPaddings.zero,
                         ),
                         "h1": Style(
                           fontSize: FontSize(24),
@@ -174,15 +175,6 @@ class ArticleDetailScreen extends StatelessWidget {
                           margin: Margins.symmetric(vertical: 8),
                           fontFamily: "monospace",
                         ),
-                        "*": Style(
-                          margin: Margins.zero,
-                          padding: HtmlPaddings.zero,
-                          textDecoration: TextDecoration.none,
-                        ),
-                      },
-                      onLinkTap: (url, _, __) {
-                        // Handle link taps if needed
-                        // You could implement url_launcher here
                       },
                     ),
                   ],
