@@ -56,54 +56,21 @@ ThemeData _getTheme(ColorScheme colorScheme) {
 
 TextTheme _getTextTheme(ColorScheme colorScheme) {
   final textTheme = TextTheme(
-      //Headline
-      headlineLarge: TextStyle(
-        fontSize: FontSize.s24,
-        fontWeight: FontWeight.w700,
-        color: colorScheme.primary,
-      ),
-      headlineMedium: TextStyle(
-        fontSize: FontSize.s18,
-        fontWeight: FontWeight.w700,
-        color: colorScheme.onBackground,
-      ),
-      //Display
-      displayLarge: TextStyle(
-        fontSize: FontSize.s36,
-        fontWeight: FontWeight.w700,
-        color: colorScheme.primary,
-      ),
-      displayMedium: const TextStyle(
-        fontSize: FontSize.s18,
-        fontWeight: FontWeight.w500,
-      ),
-      //Title
-      titleLarge: TextStyle(
-        fontSize: FontSize.s20,
-        fontWeight: FontWeight.w400,
-        color: colorScheme.onBackground,
-      ),
-      titleMedium: TextStyle(
-        fontSize: FontSize.s18,
-        fontWeight: FontWeight.w400,
-        color: colorScheme.onBackground,
-      ),
-      //Body
-      bodyMedium: const TextStyle(
-        fontSize: FontSize.s16,
-        fontWeight: FontWeight.w400,
-      ),
-      bodySmall: TextStyle(
-        fontSize: FontSize.s14,
-        fontWeight: FontWeight.w400,
-        color: colorScheme.onBackground,
-      ),
-      //Label
-      labelSmall: TextStyle(
-        fontSize: FontSize.s10,
-        fontWeight: FontWeight.w400,
-        color: colorScheme.primary,
-      ));
+    headlineLarge: TextStyle(
+      fontSize: FontSize.s24,
+      fontWeight: FontWeight.w700,
+      color: colorScheme.primary,
+    ),
+    titleLarge: TextStyle(
+      fontSize: FontSize.s20,
+      fontWeight: FontWeight.w400,
+      color: colorScheme.onBackground,
+    ),
+    bodyMedium: const TextStyle(
+      fontSize: FontSize.s16,
+      fontWeight: FontWeight.w400,
+    ),
+  );
 
   return GoogleFonts.rubikTextTheme(textTheme);
 }
