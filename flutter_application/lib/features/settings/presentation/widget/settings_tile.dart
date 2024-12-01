@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/core/extensions/build_context_extensions.dart';
-import 'package:flutter_application/core/extensions/string_extensions.dart';
+import 'package:amaravati_chamber/core/extensions/build_context_extensions.dart';
+import 'package:amaravati_chamber/core/extensions/string_extensions.dart';
 
 class SettingsTile extends StatelessWidget {
   const SettingsTile({

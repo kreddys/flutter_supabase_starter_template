@@ -1,8 +1,8 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter_application/core/value_objects/email_value_object.dart';
-import 'package:flutter_application/features/user/domain/exception/change_email_address_exception.dart';
-import 'package:flutter_application/features/user/domain/use_case/change_email_address_use_case.dart';
+import 'package:amaravati_chamber/core/value_objects/email_value_object.dart';
+import 'package:amaravati_chamber/features/user/domain/exception/change_email_address_exception.dart';
+import 'package:amaravati_chamber/features/user/domain/use_case/change_email_address_use_case.dart';
 import 'package:formz/formz.dart';
 import 'package:injectable/injectable.dart';
 import 'package:meta/meta.dart';

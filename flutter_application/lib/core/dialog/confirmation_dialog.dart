@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application/core/extensions/build_context_extensions.dart';
+import 'package:amaravati_chamber/core/extensions/build_context_extensions.dart';
 import 'package:go_router/go_router.dart';
 
 class ConfirmationDialog extends StatelessWidget {

@@ -1,4 +1,4 @@
-import 'package:flutter_application/core/extensions/string_extensions.dart';
+import 'package:amaravati_chamber/core/extensions/string_extensions.dart';
 import 'package:formz/formz.dart';
 
 enum EmailValidationError {

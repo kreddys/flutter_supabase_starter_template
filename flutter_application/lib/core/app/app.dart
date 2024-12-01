@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_application/core/router/router.dart';
-import 'package:flutter_application/core/app/app_theme.dart';
-import 'package:flutter_application/dependency_injection.dart';
-import 'package:flutter_application/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:flutter_application/features/theme_mode/presentation/bloc/theme_mode_cubit.dart';
-import 'package:flutter_application/core/app/app_theme.dart' show theme, darkTheme;
+import 'package:amaravati_chamber/core/router/router.dart';
+import 'package:amaravati_chamber/core/app/app_theme.dart';
+import 'package:amaravati_chamber/dependency_injection.dart';
+import 'package:amaravati_chamber/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:amaravati_chamber/features/theme_mode/presentation/bloc/theme_mode_cubit.dart';
+import 'package:amaravati_chamber/core/app/app_theme.dart' show theme, darkTheme;
 
 class FlutterSupabaseStarterApp extends StatelessWidget {
   const FlutterSupabaseStarterApp({
@@ -19,7 +19,7 @@ class FlutterSupabaseStarterApp extends StatelessWidget {
         buildWhen: (previous, current) => previous.selectedThemeMode != current.selectedThemeMode,
         builder: (context, state) {
           return MaterialApp.router(
-            title: 'Flutter and Supabase Starter',
+            title: 'Amaravati Chamber',
             routerConfig: router,
             debugShowCheckedModeBanner: false,
             theme: theme,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/features/settings/presentation/widget/settings_tile.dart';
-import 'package:flutter_application/features/settings/presentation/widget/settings_section.dart';
+import 'package:amaravati_chamber/features/settings/presentation/widget/settings_tile.dart';
+import 'package:amaravati_chamber/features/settings/presentation/widget/settings_section.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class InfoSettingsSection extends StatefulWidget {

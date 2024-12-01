@@ -5,7 +5,7 @@ import '../bloc/news_state.dart';
 import 'article_detail_screen.dart';
 import '../../domain/entities/news_article.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:flutter_application/dependency_injection.dart';
+import 'package:amaravati_chamber/dependency_injection.dart';
 
 class NewsContent extends StatefulWidget {
   const NewsContent({super.key});

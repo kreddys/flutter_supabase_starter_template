@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter_application/core/use_cases/no_params.dart';
-import 'package:flutter_application/features/auth/data/mapper/auth_mapper.dart';
-import 'package:flutter_application/features/auth/domain/entity/auth_user_entity.dart';
-import 'package:flutter_application/features/auth/domain/use_case/get_current_auth_state_use_case.dart';
-import 'package:flutter_application/features/auth/domain/use_case/logout_use_case.dart';
+import 'package:amaravati_chamber/core/use_cases/no_params.dart';
+import 'package:amaravati_chamber/features/auth/data/mapper/auth_mapper.dart';
+import 'package:amaravati_chamber/features/auth/domain/entity/auth_user_entity.dart';
+import 'package:amaravati_chamber/features/auth/domain/use_case/get_current_auth_state_use_case.dart';
+import 'package:amaravati_chamber/features/auth/domain/use_case/logout_use_case.dart';
 import 'package:injectable/injectable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase_auth;
 

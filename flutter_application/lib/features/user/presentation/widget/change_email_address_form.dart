@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/core/constants/spacings.dart';
-import 'package:flutter_application/core/extensions/build_context_extensions.dart';
-import 'package:flutter_application/core/widgets/form_wrapper.dart';
-import 'package:flutter_application/features/user/presentation/widget/change_email_address_button.dart';
-import 'package:flutter_application/features/user/presentation/widget/change_email_adress_email_input.dart';
+import 'package:amaravati_chamber/core/constants/spacings.dart';
+import 'package:amaravati_chamber/core/extensions/build_context_extensions.dart';
+import 'package:amaravati_chamber/core/widgets/form_wrapper.dart';
+import 'package:amaravati_chamber/features/user/presentation/widget/change_email_address_button.dart';
+import 'package:amaravati_chamber/features/user/presentation/widget/change_email_adress_email_input.dart';
 
 class ChangeEmailAddressForm extends StatelessWidget {
   const ChangeEmailAddressForm({

@@ -1,8 +1,8 @@
 import "package:flutter/material.dart";
 import "package:flutter_bloc/flutter_bloc.dart";
-import "package:flutter_application/core/router/routes.dart";
-import "package:flutter_application/core/utils/dialog_utils.dart";
-import "package:flutter_application/features/auth/presentation/bloc/auth_bloc.dart";
+import "package:amaravati_chamber/core/router/routes.dart";
+import "package:amaravati_chamber/core/utils/dialog_utils.dart";
+import "package:amaravati_chamber/features/auth/presentation/bloc/auth_bloc.dart";
 import "package:go_router/go_router.dart";
 
 import "../../../../core/constants/colors.dart";

@@ -1,4 +1,4 @@
-// /flutter_application/lib/features/news/data/models/article_model.dart
+// /amaravati_chamber/lib/features/news/data/models/article_model.dart
 
 class ArticleModel {
   final String id;

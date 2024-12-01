@@ -1,5 +1,5 @@
-import 'package:flutter_application/core/use_cases/use_case.dart';
-import 'package:flutter_application/features/user/domain/repository/user_repository.dart';
+import 'package:amaravati_chamber/core/use_cases/use_case.dart';
+import 'package:amaravati_chamber/features/user/domain/repository/user_repository.dart';
 import 'package:injectable/injectable.dart';
 
 @injectable

@@ -8,48 +8,48 @@
 // coverage:ignore-file
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:flutter_application/core/app/app_module.dart' as _i690;
-import 'package:flutter_application/features/auth/data/repository/supabase_auth_repository.dart'
+import 'package:amaravati_chamber/core/app/app_module.dart' as _i690;
+import 'package:amaravati_chamber/features/auth/data/repository/supabase_auth_repository.dart'
     as _i476;
-import 'package:flutter_application/features/auth/domain/repository/auth_repository.dart'
+import 'package:amaravati_chamber/features/auth/domain/repository/auth_repository.dart'
     as _i946;
-import 'package:flutter_application/features/auth/domain/use_case/get_current_auth_state_use_case.dart'
+import 'package:amaravati_chamber/features/auth/domain/use_case/get_current_auth_state_use_case.dart'
     as _i781;
-import 'package:flutter_application/features/auth/domain/use_case/get_logged_in_user_use_case.dart'
+import 'package:amaravati_chamber/features/auth/domain/use_case/get_logged_in_user_use_case.dart'
     as _i981;
-import 'package:flutter_application/features/auth/domain/use_case/login_with_email_use_case.dart'
+import 'package:amaravati_chamber/features/auth/domain/use_case/login_with_email_use_case.dart'
     as _i602;
-import 'package:flutter_application/features/auth/domain/use_case/logout_use_case.dart'
+import 'package:amaravati_chamber/features/auth/domain/use_case/logout_use_case.dart'
     as _i603;
-import 'package:flutter_application/features/auth/presentation/bloc/auth_bloc.dart'
+import 'package:amaravati_chamber/features/auth/presentation/bloc/auth_bloc.dart'
     as _i964;
-import 'package:flutter_application/features/auth/presentation/bloc/login/login_cubit.dart'
+import 'package:amaravati_chamber/features/auth/presentation/bloc/login/login_cubit.dart'
     as _i723;
-import 'package:flutter_application/features/home/presentation/bloc/bottom_navigation_bar/bottom_navigation_bar_cubit.dart'
+import 'package:amaravati_chamber/features/home/presentation/bloc/bottom_navigation_bar/bottom_navigation_bar_cubit.dart'
     as _i740;
-import 'package:flutter_application/features/news/data/repositories/news_repository.dart'
+import 'package:amaravati_chamber/features/news/data/repositories/news_repository.dart'
     as _i880;
-import 'package:flutter_application/features/news/domain/repositories/i_news_repository.dart'
+import 'package:amaravati_chamber/features/news/domain/repositories/i_news_repository.dart'
     as _i221;
-import 'package:flutter_application/features/news/presentation/bloc/news_cubit.dart'
+import 'package:amaravati_chamber/features/news/presentation/bloc/news_cubit.dart'
     as _i984;
-import 'package:flutter_application/features/theme_mode/data/repository/theme_mode_hive_repository.dart'
+import 'package:amaravati_chamber/features/theme_mode/data/repository/theme_mode_hive_repository.dart'
     as _i279;
-import 'package:flutter_application/features/theme_mode/domain/repository/theme_mode_repository.dart'
+import 'package:amaravati_chamber/features/theme_mode/domain/repository/theme_mode_repository.dart'
     as _i12;
-import 'package:flutter_application/features/theme_mode/domain/use_case/get_or_set_initial_theme_mode_use_case.dart'
+import 'package:amaravati_chamber/features/theme_mode/domain/use_case/get_or_set_initial_theme_mode_use_case.dart'
     as _i1023;
-import 'package:flutter_application/features/theme_mode/domain/use_case/set_theme_mode_id_use_case.dart'
+import 'package:amaravati_chamber/features/theme_mode/domain/use_case/set_theme_mode_id_use_case.dart'
     as _i727;
-import 'package:flutter_application/features/theme_mode/presentation/bloc/theme_mode_cubit.dart'
+import 'package:amaravati_chamber/features/theme_mode/presentation/bloc/theme_mode_cubit.dart'
     as _i621;
-import 'package:flutter_application/features/user/data/repository/supabase_user_repository.dart'
+import 'package:amaravati_chamber/features/user/data/repository/supabase_user_repository.dart'
     as _i763;
-import 'package:flutter_application/features/user/domain/repository/user_repository.dart'
+import 'package:amaravati_chamber/features/user/domain/repository/user_repository.dart'
     as _i392;
-import 'package:flutter_application/features/user/domain/use_case/change_email_address_use_case.dart'
+import 'package:amaravati_chamber/features/user/domain/use_case/change_email_address_use_case.dart'
     as _i627;
-import 'package:flutter_application/features/user/presentation/bloc/change_email_address/change_email_address_cubit.dart'
+import 'package:amaravati_chamber/features/user/presentation/bloc/change_email_address/change_email_address_cubit.dart'
     as _i75;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;

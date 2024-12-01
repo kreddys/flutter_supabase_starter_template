@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_application/core/extensions/string_extensions.dart';
-import 'package:flutter_application/features/theme_mode/presentation/bloc/theme_mode_cubit.dart';
+import 'package:amaravati_chamber/core/extensions/string_extensions.dart';
+import 'package:amaravati_chamber/features/theme_mode/presentation/bloc/theme_mode_cubit.dart';
 
 class ThemeModePage extends StatelessWidget {
   const ThemeModePage({

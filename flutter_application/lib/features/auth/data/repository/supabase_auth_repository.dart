@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_application/core/constants/urls.dart';
-import 'package:flutter_application/features/auth/data/mapper/auth_mapper.dart';
-import 'package:flutter_application/features/auth/domain/entity/auth_user_entity.dart';
-import 'package:flutter_application/features/auth/domain/exception/login_with_email_exception.dart';
-import 'package:flutter_application/features/auth/domain/repository/auth_repository.dart';
+import 'package:amaravati_chamber/core/constants/urls.dart';
+import 'package:amaravati_chamber/features/auth/data/mapper/auth_mapper.dart';
+import 'package:amaravati_chamber/features/auth/domain/entity/auth_user_entity.dart';
+import 'package:amaravati_chamber/features/auth/domain/exception/login_with_email_exception.dart';
+import 'package:amaravati_chamber/features/auth/domain/repository/auth_repository.dart';
 import 'package:injectable/injectable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

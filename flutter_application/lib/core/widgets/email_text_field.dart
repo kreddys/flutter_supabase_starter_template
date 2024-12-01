@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/core/widgets/base_text_field.dart';
+import 'package:amaravati_chamber/core/widgets/base_text_field.dart';
 
 class EmailTextField extends StatelessWidget {
   const EmailTextField({

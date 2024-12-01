@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_application/core/extensions/build_context_extensions.dart';
-import 'package:flutter_application/core/widgets/centered_circular_progress_indicator.dart';
-import 'package:flutter_application/features/user/presentation/bloc/change_email_address/change_email_address_cubit.dart';
+import 'package:amaravati_chamber/core/extensions/build_context_extensions.dart';
+import 'package:amaravati_chamber/core/widgets/centered_circular_progress_indicator.dart';
+import 'package:amaravati_chamber/features/user/presentation/bloc/change_email_address/change_email_address_cubit.dart';
 import 'package:formz/formz.dart';
 
 class ChangeEmailAddressButton extends StatelessWidget {

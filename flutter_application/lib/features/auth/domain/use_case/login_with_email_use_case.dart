@@ -1,8 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:flutter_application/core/use_cases/use_case.dart';
-import 'package:flutter_application/features/auth/domain/repository/auth_repository.dart';
+import 'package:amaravati_chamber/core/use_cases/use_case.dart';
+import 'package:amaravati_chamber/features/auth/domain/repository/auth_repository.dart';
 
 @injectable
 class LoginWithEmailUseCase extends UseCase<Future<void>, LoginWithEmailParams> {

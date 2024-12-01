@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/core/constants/font_sizes.dart';
+import 'package:amaravati_chamber/core/constants/font_sizes.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 final theme = _getTheme(_lightColorScheme);

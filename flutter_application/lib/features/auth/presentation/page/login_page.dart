@@ -3,12 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:flutter_application/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:flutter_application/features/auth/presentation/bloc/login/login_cubit.dart';
-import 'package:flutter_application/features/auth/presentation/widget/login_form.dart';
-import 'package:flutter_application/core/extensions/build_context_extensions.dart';
-import 'package:flutter_application/core/router/routes.dart';
-import 'package:flutter_application/dependency_injection.dart';
+import 'package:amaravati_chamber/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:amaravati_chamber/features/auth/presentation/bloc/login/login_cubit.dart';
+import 'package:amaravati_chamber/features/auth/presentation/widget/login_form.dart';
+import 'package:amaravati_chamber/core/extensions/build_context_extensions.dart';
+import 'package:amaravati_chamber/core/router/routes.dart';
+import 'package:amaravati_chamber/dependency_injection.dart';
 
 import '../../../../core/constants/spacings.dart';
 

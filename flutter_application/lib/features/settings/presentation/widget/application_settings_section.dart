@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/features/settings/presentation/widget/settings_section.dart';
-import 'package:flutter_application/features/theme_mode/presentation/widget/theme_mode_settings_tile.dart';
+import 'package:amaravati_chamber/features/settings/presentation/widget/settings_section.dart';
+import 'package:amaravati_chamber/features/theme_mode/presentation/widget/theme_mode_settings_tile.dart';
 
 class ApplicationSettingsSection extends StatelessWidget {
   const ApplicationSettingsSection({super.key});

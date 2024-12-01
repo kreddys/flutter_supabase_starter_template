@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
-import 'package:flutter_application/core/use_cases/use_case.dart';
-import 'package:flutter_application/features/theme_mode/domain/repository/theme_mode_repository.dart';
+import 'package:amaravati_chamber/core/use_cases/use_case.dart';
+import 'package:amaravati_chamber/features/theme_mode/domain/repository/theme_mode_repository.dart';
 import 'package:injectable/injectable.dart';
 
 @injectable

@@ -1,5 +1,5 @@
-import 'package:flutter_application/core/extensions/hive_extensions.dart';
-import 'package:flutter_application/features/theme_mode/domain/repository/theme_mode_repository.dart';
+import 'package:amaravati_chamber/core/extensions/hive_extensions.dart';
+import 'package:amaravati_chamber/features/theme_mode/domain/repository/theme_mode_repository.dart';
 import 'package:hive/hive.dart';
 import 'package:injectable/injectable.dart';
 

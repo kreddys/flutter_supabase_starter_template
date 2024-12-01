@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/core/extensions/string_extensions.dart';
-import 'package:flutter_application/core/extensions/theme_extension.dart';
-import 'package:flutter_application/core/router/routes.dart';
+import 'package:amaravati_chamber/core/extensions/string_extensions.dart';
+import 'package:amaravati_chamber/core/extensions/theme_extension.dart';
+import 'package:amaravati_chamber/core/router/routes.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../settings/presentation/widget/settings_tile.dart';

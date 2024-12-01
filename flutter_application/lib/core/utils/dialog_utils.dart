@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/core/dialog/confirmation_dialog.dart';
+import 'package:amaravati_chamber/core/dialog/confirmation_dialog.dart';
 
 class DialogUtils {
   const DialogUtils._();

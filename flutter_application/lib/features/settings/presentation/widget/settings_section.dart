@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/core/constants/font_sizes.dart';
-import 'package:flutter_application/core/constants/spacings.dart';
-import 'package:flutter_application/core/extensions/build_context_extensions.dart';
+import 'package:amaravati_chamber/core/constants/font_sizes.dart';
+import 'package:amaravati_chamber/core/constants/spacings.dart';
+import 'package:amaravati_chamber/core/extensions/build_context_extensions.dart';
 
 class SettingsSection extends StatelessWidget {
   const SettingsSection({

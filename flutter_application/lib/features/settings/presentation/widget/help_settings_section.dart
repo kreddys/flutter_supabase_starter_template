@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/core/constants/urls.dart';
-import 'package:flutter_application/features/settings/presentation/widget/settings_tile.dart';
-import 'package:flutter_application/features/settings/presentation/widget/settings_section.dart';
+import 'package:amaravati_chamber/core/constants/urls.dart';
+import 'package:amaravati_chamber/features/settings/presentation/widget/settings_tile.dart';
+import 'package:amaravati_chamber/features/settings/presentation/widget/settings_section.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HelpSettingsSection extends StatelessWidget {

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/core/extensions/hive_extensions.dart';
+import 'package:amaravati_chamber/core/extensions/hive_extensions.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'package:flutter_application/core/app/app.dart';
-import 'package:flutter_application/dependency_injection.dart';
+import 'package:amaravati_chamber/core/app/app.dart';
+import 'package:amaravati_chamber/dependency_injection.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

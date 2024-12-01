@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_application/core/constants/urls.dart';
-import 'package:flutter_application/features/user/domain/exception/change_email_address_exception.dart';
-import 'package:flutter_application/features/user/domain/repository/user_repository.dart';
+import 'package:amaravati_chamber/core/constants/urls.dart';
+import 'package:amaravati_chamber/features/user/domain/exception/change_email_address_exception.dart';
+import 'package:amaravati_chamber/features/user/domain/repository/user_repository.dart';
 import 'package:injectable/injectable.dart';
 import 'package:supabase/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
