@@ -12,5 +12,8 @@ class NewsArticle with _$NewsArticle {
     required DateTime publishedAt,
     required String imageUrl,
     required String htmlContent,
+    @Default(0) int upvotes,
+    @Default(0) int downvotes,
+    @Default(0) int userVote,
   }) = _NewsArticle;
 }

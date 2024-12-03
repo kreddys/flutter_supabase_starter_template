@@ -23,6 +23,9 @@ mixin _$NewsArticle {
   DateTime get publishedAt => throw _privateConstructorUsedError;
   String get imageUrl => throw _privateConstructorUsedError;
   String get htmlContent => throw _privateConstructorUsedError;
+  int get upvotes => throw _privateConstructorUsedError;
+  int get downvotes => throw _privateConstructorUsedError;
+  int get userVote => throw _privateConstructorUsedError;
 
   /// Create a copy of NewsArticle
   /// with the given fields replaced by the non-null parameter values.
@@ -44,7 +47,10 @@ abstract class $NewsArticleCopyWith<$Res> {
       String author,
       DateTime publishedAt,
       String imageUrl,
-      String htmlContent});
+      String htmlContent,
+      int upvotes,
+      int downvotes,
+      int userVote});
 }
 
 /// @nodoc
@@ -69,6 +75,9 @@ class _$NewsArticleCopyWithImpl<$Res, $Val extends NewsArticle>
     Object? publishedAt = null,
     Object? imageUrl = null,
     Object? htmlContent = null,
+    Object? upvotes = null,
+    Object? downvotes = null,
+    Object? userVote = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -99,6 +108,18 @@ class _$NewsArticleCopyWithImpl<$Res, $Val extends NewsArticle>
           ? _value.htmlContent
           : htmlContent // ignore: cast_nullable_to_non_nullable
               as String,
+      upvotes: null == upvotes
+          ? _value.upvotes
+          : upvotes // ignore: cast_nullable_to_non_nullable
+              as int,
+      downvotes: null == downvotes
+          ? _value.downvotes
+          : downvotes // ignore: cast_nullable_to_non_nullable
+              as int,
+      userVote: null == userVote
+          ? _value.userVote
+          : userVote // ignore: cast_nullable_to_non_nullable
+              as int,
     ) as $Val);
   }
 }
@@ -118,7 +139,10 @@ abstract class _$$NewsArticleImplCopyWith<$Res>
       String author,
       DateTime publishedAt,
       String imageUrl,
-      String htmlContent});
+      String htmlContent,
+      int upvotes,
+      int downvotes,
+      int userVote});
 }
 
 /// @nodoc
@@ -141,6 +165,9 @@ class __$$NewsArticleImplCopyWithImpl<$Res>
     Object? publishedAt = null,
     Object? imageUrl = null,
     Object? htmlContent = null,
+    Object? upvotes = null,
+    Object? downvotes = null,
+    Object? userVote = null,
   }) {
     return _then(_$NewsArticleImpl(
       id: null == id
@@ -171,6 +198,18 @@ class __$$NewsArticleImplCopyWithImpl<$Res>
           ? _value.htmlContent
           : htmlContent // ignore: cast_nullable_to_non_nullable
               as String,
+      upvotes: null == upvotes
+          ? _value.upvotes
+          : upvotes // ignore: cast_nullable_to_non_nullable
+              as int,
+      downvotes: null == downvotes
+          ? _value.downvotes
+          : downvotes // ignore: cast_nullable_to_non_nullable
+              as int,
+      userVote: null == userVote
+          ? _value.userVote
+          : userVote // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }
@@ -185,7 +224,10 @@ class _$NewsArticleImpl implements _NewsArticle {
       required this.author,
       required this.publishedAt,
       required this.imageUrl,
-      required this.htmlContent});
+      required this.htmlContent,
+      this.upvotes = 0,
+      this.downvotes = 0,
+      this.userVote = 0});
 
   @override
   final String id;
@@ -201,10 +243,19 @@ class _$NewsArticleImpl implements _NewsArticle {
   final String imageUrl;
   @override
   final String htmlContent;
+  @override
+  @JsonKey()
+  final int upvotes;
+  @override
+  @JsonKey()
+  final int downvotes;
+  @override
+  @JsonKey()
+  final int userVote;
 
   @override
   String toString() {
-    return 'NewsArticle(id: $id, title: $title, description: $description, author: $author, publishedAt: $publishedAt, imageUrl: $imageUrl, htmlContent: $htmlContent)';
+    return 'NewsArticle(id: $id, title: $title, description: $description, author: $author, publishedAt: $publishedAt, imageUrl: $imageUrl, htmlContent: $htmlContent, upvotes: $upvotes, downvotes: $downvotes, userVote: $userVote)';
   }
 
   @override
@@ -222,12 +273,17 @@ class _$NewsArticleImpl implements _NewsArticle {
             (identical(other.imageUrl, imageUrl) ||
                 other.imageUrl == imageUrl) &&
             (identical(other.htmlContent, htmlContent) ||
-                other.htmlContent == htmlContent));
+                other.htmlContent == htmlContent) &&
+            (identical(other.upvotes, upvotes) || other.upvotes == upvotes) &&
+            (identical(other.downvotes, downvotes) ||
+                other.downvotes == downvotes) &&
+            (identical(other.userVote, userVote) ||
+                other.userVote == userVote));
   }
 
   @override
   int get hashCode => Object.hash(runtimeType, id, title, description, author,
-      publishedAt, imageUrl, htmlContent);
+      publishedAt, imageUrl, htmlContent, upvotes, downvotes, userVote);
 
   /// Create a copy of NewsArticle
   /// with the given fields replaced by the non-null parameter values.
@@ -246,7 +302,10 @@ abstract class _NewsArticle implements NewsArticle {
       required final String author,
       required final DateTime publishedAt,
       required final String imageUrl,
-      required final String htmlContent}) = _$NewsArticleImpl;
+      required final String htmlContent,
+      final int upvotes,
+      final int downvotes,
+      final int userVote}) = _$NewsArticleImpl;
 
   @override
   String get id;
@@ -262,6 +321,12 @@ abstract class _NewsArticle implements NewsArticle {
   String get imageUrl;
   @override
   String get htmlContent;
+  @override
+  int get upvotes;
+  @override
+  int get downvotes;
+  @override
+  int get userVote;
 
   /// Create a copy of NewsArticle
   /// with the given fields replaced by the non-null parameter values.
