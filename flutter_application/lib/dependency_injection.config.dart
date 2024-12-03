@@ -107,11 +107,8 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i900.LoginWithEmailUseCase(gh<_i939.AuthRepository>()));
     gh.factory<_i754.GetCurrentAuthStateUseCase>(
         () => _i754.GetCurrentAuthStateUseCase(gh<_i939.AuthRepository>()));
-    gh.factory<_i552.ChangeEmailAddressCubit>(
-        () => _i552.ChangeEmailAddressCubit(
-              gh<_i1056.ChangeEmailAddressUseCase>(),
-              initialEmail: gh<String>(),
-            ));
+    gh.factory<_i552.ChangeEmailAddressCubit>(() =>
+        _i552.ChangeEmailAddressCubit(gh<_i1056.ChangeEmailAddressUseCase>()));
     gh.factory<_i752.NewsCubit>(() => _i752.NewsCubit(
           gh<_i179.INewsRepository>(),
           gh<_i567.IVotingRepository>(),

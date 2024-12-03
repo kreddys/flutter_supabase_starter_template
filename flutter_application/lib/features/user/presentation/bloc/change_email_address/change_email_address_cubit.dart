@@ -11,12 +11,13 @@ part '../change_email_address/change_email_address_state.dart';
 
 @injectable
 class ChangeEmailAddressCubit extends Cubit<ChangeEmailAddressState> {
-  
   final ChangeEmailAddressUseCase _changeEmailAddressUseCase;
 
-  ChangeEmailAddressCubit(this._changeEmailAddressUseCase, {String? initialEmail}) 
-      : super(ChangeEmailAddressState(
-          email: EmailValueObject.dirty(initialEmail ?? ''),
+  @factoryMethod
+  ChangeEmailAddressCubit(
+    this._changeEmailAddressUseCase,
+  ) : super(ChangeEmailAddressState(
+          email: EmailValueObject.dirty(''),
         ));
 
   void emailChanged(String value) {
