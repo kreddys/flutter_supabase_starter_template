@@ -6,7 +6,6 @@ import 'article_detail_screen.dart';
 import '../../domain/entities/news_article.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:amaravati_chamber/dependency_injection.dart';
-import 'package:amaravati_chamber/core/widgets/vote_buttons.dart';
 
 class NewsContent extends StatefulWidget {
   const NewsContent({super.key});
@@ -328,114 +327,90 @@ class _NewsContentState extends State<NewsContent> {
     );
   }
 
-Widget _buildArticleCard(BuildContext context, NewsArticle article) {
-  return Card(
-    elevation: 0,
-    margin: const EdgeInsets.only(bottom: 16.0),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-      side: BorderSide(
-        color: Theme.of(context).dividerColor,
+  Widget _buildArticleCard(BuildContext context, NewsArticle article) {
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 16.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Theme.of(context).dividerColor,
+        ),
       ),
-    ),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ArticleDetailScreen(article: article),
-          ),
-        );
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (article.imageUrl.isNotEmpty)
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
-              ),
-              child: Image.network(
-                article.imageUrl,
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    height: 200,
-                    color: Theme.of(context).colorScheme.surfaceVariant,
-                    child: Center(
-                      child: Icon(
-                        Icons.error,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  );
-                },
-              ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ArticleDetailScreen(article: article),
             ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Html(
-                  data: article.title,
-                  style: {
-                    "body": Style(
-                      fontSize: FontSize(17),
-                      margin: Margins.zero,
-                      padding: HtmlPaddings.zero,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).textTheme.titleLarge?.color,
-                    ),
+          );
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (article.imageUrl.isNotEmpty)
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
+                ),
+                child: Image.network(
+                  article.imageUrl,
+                  width: double.infinity,
+                  height: 200,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 200,
+                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      child: Center(
+                        child: Icon(
+                          Icons.error,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    );
                   },
                 ),
-                const SizedBox(height: 4),
-                Html(
-                  data: article.description,
-                  style: {
-                    "body": Style(
-                      fontSize: FontSize(15),
-                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                      margin: Margins.zero,
-                      padding: HtmlPaddings.zero,
-                      maxLines: 3,
-                      textOverflow: TextOverflow.ellipsis,
-                    ),
-                  },
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      [
-                        if (article.author.isNotEmpty) 'By ${article.author}',
-                        if (article.publishedAt != null) _formatDate(article.publishedAt),
-                      ].join(' • '),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+              ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Html(
+                    data: article.title,
+                    style: {
+                      "body": Style(
+                        fontSize: FontSize(17),
+                        margin: Margins.zero,
+                        padding: HtmlPaddings.zero,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).textTheme.titleLarge?.color,
                       ),
-                    ),
-                    VoteButtons(
-                      entityId: article.id,
-                      userVote: article.userVote,
-                      upvotes: article.upvotes,
-                      downvotes: article.downvotes,
-                      onVote: (vote) {
-                        context.read<NewsCubit>().updateVote(article.id, vote);
-                      },
-                    ),
-                  ],
-                ),
-              ],
+                    },
+                  ),
+                  const SizedBox(height: 4),
+                  Html(
+                    data: article.description,
+                    style: {
+                      "body": Style(
+                        fontSize: FontSize(15),
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                        margin: Margins.zero,
+                        padding: HtmlPaddings.zero,
+                        maxLines: 3,
+                        textOverflow: TextOverflow.ellipsis,
+                      ),
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
