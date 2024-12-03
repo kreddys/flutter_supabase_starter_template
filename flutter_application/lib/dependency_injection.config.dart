@@ -87,8 +87,6 @@ extension GetItInjectableX on _i174.GetIt {
         _i257.GetOrSetInitialThemeModeUseCase(gh<_i411.ThemeModeRepository>()));
     gh.factory<_i736.SetThemeModeUseCase>(
         () => _i736.SetThemeModeUseCase(gh<_i411.ThemeModeRepository>()));
-    gh.lazySingleton<_i179.INewsRepository>(
-        () => _i1037.NewsRepository(gh<_i454.SupabaseClient>()));
     gh.factory<_i939.AuthRepository>(
         () => _i688.SupabaseAuthRepository(gh<_i454.GoTrueClient>()));
     gh.factory<_i1056.ChangeEmailAddressUseCase>(
@@ -99,6 +97,10 @@ extension GetItInjectableX on _i174.GetIt {
         ));
     gh.lazySingleton<_i567.IVotingRepository>(
         () => _i316.VotingRepository(gh<_i454.SupabaseClient>()));
+    gh.lazySingleton<_i179.INewsRepository>(() => _i1037.NewsRepository(
+          gh<_i454.SupabaseClient>(),
+          gh<_i567.IVotingRepository>(),
+        ));
     gh.factory<_i804.LogoutUseCase>(
         () => _i804.LogoutUseCase(gh<_i939.AuthRepository>()));
     gh.factory<_i134.GetLoggedInUserUseCase>(
