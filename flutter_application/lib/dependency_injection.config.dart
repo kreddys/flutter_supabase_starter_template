@@ -99,8 +99,6 @@ extension GetItInjectableX on _i174.GetIt {
         ));
     gh.lazySingleton<_i567.IVotingRepository>(
         () => _i316.VotingRepository(gh<_i454.SupabaseClient>()));
-    gh.factory<_i752.NewsCubit>(
-        () => _i752.NewsCubit(gh<_i179.INewsRepository>()));
     gh.factory<_i804.LogoutUseCase>(
         () => _i804.LogoutUseCase(gh<_i939.AuthRepository>()));
     gh.factory<_i134.GetLoggedInUserUseCase>(
@@ -114,6 +112,10 @@ extension GetItInjectableX on _i174.GetIt {
               gh<_i1056.ChangeEmailAddressUseCase>(),
               initialEmail: gh<String>(),
             ));
+    gh.factory<_i752.NewsCubit>(() => _i752.NewsCubit(
+          gh<_i179.INewsRepository>(),
+          gh<_i567.IVotingRepository>(),
+        ));
     gh.factory<_i52.AuthBloc>(() => _i52.AuthBloc(
           gh<_i134.GetLoggedInUserUseCase>(),
           gh<_i754.GetCurrentAuthStateUseCase>(),

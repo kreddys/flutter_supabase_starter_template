@@ -3,10 +3,13 @@ import 'package:injectable/injectable.dart';
 import '../../domain/repositories/i_news_repository.dart';
 import '../../domain/entities/news_article.dart';
 import 'news_state.dart';
+import '../../../../core/voting/domain/repositories/i_voting_repository.dart';
 
 @injectable
 class NewsCubit extends Cubit<NewsState> {
   final INewsRepository _newsRepository;
+  final IVotingRepository _votingRepository; // Add this
+  
   List<NewsArticle> _allArticles = [];
   List<NewsArticle> _searchResults = []; // New list for search results
   int _currentPage = 1;
@@ -14,7 +17,10 @@ class NewsCubit extends Cubit<NewsState> {
   bool _hasMoreData = true;
   bool _isLoadingMore = false;
 
-  NewsCubit(this._newsRepository) : super(const NewsState.initial());
+  NewsCubit(
+        this._newsRepository,
+        this._votingRepository, 
+        ) : super(const NewsState.initial());
 
   Future<void> loadNews() async {
     emit(const NewsState.loading());
@@ -142,6 +148,64 @@ class NewsCubit extends Cubit<NewsState> {
         hasMoreData: _hasMoreData,
       ));
   }
+
+  Future<void> updateVote({
+  required String articleId,
+  required VoteType? voteType,
+}) async {
+  final result = await _votingRepository.vote(
+    entityId: articleId,
+    entityType: EntityType.article,
+    voteType: voteType,
+  );
+
+  result.fold(
+    (error) {
+      // Handle error
+    },
+    (success) async {
+      // Get updated vote counts
+      final voteCounts = await _votingRepository.getVoteCounts(
+        entityId: articleId,
+        entityType: EntityType.article,
+      );
+
+      voteCounts.fold(
+        (error) {
+          // Handle error
+        },
+        (counts) {
+          final currentState = state;
+        if (currentState is NewsState) {
+          currentState.maybeWhen(
+            loaded: (articles, isLoadingMore, hasMoreData) {
+              final updatedArticles = articles.map((article) {
+                if (article.id == articleId) {
+                  return article.copyWith(
+                    upvotes: counts['upvotes'] ?? 0,
+                    downvotes: counts['downvotes'] ?? 0,
+                    userVote: voteType == null 
+                      ? 0 
+                      : voteType == VoteType.upvote ? 1 : -1,
+                  );
+                }
+                return article;
+              }).toList();
+
+              emit(NewsState.loaded(
+                articles: updatedArticles,
+                isLoadingMore: isLoadingMore,
+                hasMoreData: hasMoreData,
+              ));
+            },
+            orElse: () {},
+          );
+        }
+        },
+      );
+    },
+  );
+}
 
   // Helper method to check if currently loading
   bool get isLoading => state.maybeWhen(

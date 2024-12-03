@@ -7,6 +7,7 @@ import '../../domain/entities/news_article.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:amaravati_chamber/dependency_injection.dart';
 import '../../../../core/widgets/vote_buttons.dart';
+import '../../../../core/voting/domain/repositories/i_voting_repository.dart';
 
 class NewsContent extends StatefulWidget {
   const NewsContent({super.key});
@@ -421,11 +422,14 @@ Widget _buildArticleCard(BuildContext context, NewsArticle article) {
                     ),
                     VoteButtons(
                       entityId: article.id,
-                      userVote: article.userVote,
+                      userVote: article.userVote == 1 ? true : article.userVote == -1 ? false : null,
                       upvotes: article.upvotes,
                       downvotes: article.downvotes,
-                      onVote: (vote) {
-                        context.read<NewsCubit>().updateVote(article.id, vote);
+                      onVote: (bool? vote) {
+                        context.read<NewsCubit>().updateVote(
+                          articleId: article.id, 
+                          voteType: vote == null ? null : vote ? VoteType.upvote : VoteType.downvote,
+                        );
                       },
                     ),
                   ],
