@@ -426,7 +426,7 @@ Widget _buildArticleCard(BuildContext context, NewsArticle article) {
                       upvotes: article.upvotes,
                       downvotes: article.downvotes,
                       onVote: (VoteType? voteType) {
-                        context.read<NewsCubit>().updateVote(
+                        context.read<NewsCubit>().updateVoteAndRefresh(
                           articleId: article.id, 
                           voteType: voteType,
                         );
