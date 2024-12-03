@@ -422,13 +422,13 @@ Widget _buildArticleCard(BuildContext context, NewsArticle article) {
                     ),
                     VoteButtons(
                       entityId: article.id,
-                      userVote: article.userVote == 1 ? true : article.userVote == -1 ? false : null,
+                      userVote: article.userVote,
                       upvotes: article.upvotes,
                       downvotes: article.downvotes,
-                      onVote: (bool? vote) {
+                      onVote: (VoteType? voteType) {
                         context.read<NewsCubit>().updateVote(
                           articleId: article.id, 
-                          voteType: vote == null ? null : vote ? VoteType.upvote : VoteType.downvote,
+                          voteType: voteType,
                         );
                       },
                     ),

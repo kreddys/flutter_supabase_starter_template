@@ -14,6 +14,6 @@ class NewsArticle with _$NewsArticle {
     required String htmlContent,
     @Default(0) int upvotes,
     @Default(0) int downvotes,
-    @Default(0) int userVote,
+    @Default(0) int userVote,  // 0: no vote, 1: upvote, -1: downvote
   }) = _NewsArticle;
 }

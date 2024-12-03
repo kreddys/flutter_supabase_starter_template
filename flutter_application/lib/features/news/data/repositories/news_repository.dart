@@ -20,7 +20,6 @@ class NewsRepository implements INewsRepository {
   }) async {
     try {
       final offset = (page - 1) * itemsPerPage;
-
       final query = _supabaseClient.from('articles').select();
 
       final filteredQuery = searchQuery != null && searchQuery.isNotEmpty
@@ -32,11 +31,13 @@ class NewsRepository implements INewsRepository {
           .range(offset, offset + itemsPerPage - 1);
 
       final articles = await Future.wait((response as List<dynamic>).map((post) async {
+        // Get vote counts for this article
         final voteCounts = await _votingRepository.getVoteCounts(
           entityId: post['id'].toString(),
           entityType: EntityType.article,
         );
 
+        // Get current user's vote if logged in
         final userVote = await _votingRepository.getUserVote(
           entityId: post['id'].toString(),
           entityType: EntityType.article,
@@ -58,7 +59,6 @@ class NewsRepository implements INewsRepository {
             (l) => 0,
             (r) => r['downvotes'] ?? 0,
           ),
-          // Convert VoteType to int
           userVote: userVote.fold(
             (l) => 0,
             (r) => r == null ? 0 : (r == VoteType.upvote ? 1 : -1),

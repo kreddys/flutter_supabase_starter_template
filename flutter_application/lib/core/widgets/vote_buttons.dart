@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import '../voting/domain/repositories/i_voting_repository.dart';
 
 class VoteButtons extends StatelessWidget {
   final String entityId;
-  final bool? userVote;
+  final int userVote; // 0: no vote, 1: upvote, -1: downvote
   final int upvotes;
   final int downvotes;
-  final Function(bool?) onVote;
+  final Function(VoteType?) onVote;
 
   const VoteButtons({
     super.key,
@@ -23,25 +24,29 @@ class VoteButtons extends StatelessWidget {
       children: [
         IconButton(
           icon: Icon(
-            userVote == true ? Icons.thumb_up : Icons.thumb_up_outlined,
+            userVote == 1 ? Icons.thumb_up : Icons.thumb_up_outlined,
             size: 20,
-            color: userVote == true
+            color: userVote == 1
                 ? Theme.of(context).colorScheme.primary
                 : null,
           ),
-          onPressed: () => onVote(userVote == true ? null : true),
+          onPressed: () => onVote(
+            userVote == 1 ? null : VoteType.upvote,
+          ),
         ),
         Text('$upvotes'),
         const SizedBox(width: 8),
         IconButton(
           icon: Icon(
-            userVote == false ? Icons.thumb_down : Icons.thumb_down_outlined,
+            userVote == -1 ? Icons.thumb_down : Icons.thumb_down_outlined,
             size: 20,
-            color: userVote == false
+            color: userVote == -1
                 ? Theme.of(context).colorScheme.error
                 : null,
           ),
-          onPressed: () => onVote(userVote == false ? null : false),
+          onPressed: () => onVote(
+            userVote == -1 ? null : VoteType.downvote,
+          ),
         ),
         Text('$downvotes'),
       ],

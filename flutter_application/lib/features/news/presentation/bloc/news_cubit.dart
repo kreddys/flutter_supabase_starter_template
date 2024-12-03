@@ -149,7 +149,9 @@ class NewsCubit extends Cubit<NewsState> {
       ));
   }
 
-  Future<void> updateVote({
+// In news_cubit.dart
+
+Future<void> updateVote({
   required String articleId,
   required VoteType? voteType,
 }) async {
@@ -164,7 +166,6 @@ class NewsCubit extends Cubit<NewsState> {
       // Handle error
     },
     (success) async {
-      // Get updated vote counts
       final voteCounts = await _votingRepository.getVoteCounts(
         entityId: articleId,
         entityType: EntityType.article,
@@ -176,31 +177,62 @@ class NewsCubit extends Cubit<NewsState> {
         },
         (counts) {
           final currentState = state;
-        if (currentState is NewsState) {
-          currentState.maybeWhen(
-            loaded: (articles, isLoadingMore, hasMoreData) {
-              final updatedArticles = articles.map((article) {
-                if (article.id == articleId) {
-                  return article.copyWith(
-                    upvotes: counts['upvotes'] ?? 0,
-                    downvotes: counts['downvotes'] ?? 0,
-                    userVote: voteType == null 
-                      ? 0 
-                      : voteType == VoteType.upvote ? 1 : -1,
-                  );
-                }
-                return article;
-              }).toList();
+          if (currentState is NewsState) {
+            currentState.maybeWhen(
+              loaded: (articles, isLoadingMore, hasMoreData) {
+                // Update _allArticles
+                _allArticles = _allArticles.map((article) {
+                  if (article.id == articleId) {
+                    return article.copyWith(
+                      upvotes: counts['upvotes'] ?? 0,
+                      downvotes: counts['downvotes'] ?? 0,
+                      userVote: voteType == null 
+                        ? 0 
+                        : voteType == VoteType.upvote ? 1 : -1,
+                    );
+                  }
+                  return article;
+                }).toList();
 
-              emit(NewsState.loaded(
-                articles: updatedArticles,
-                isLoadingMore: isLoadingMore,
-                hasMoreData: hasMoreData,
-              ));
-            },
-            orElse: () {},
-          );
-        }
+                // Update _searchResults if they exist
+                if (_searchResults.isNotEmpty) {
+                  _searchResults = _searchResults.map((article) {
+                    if (article.id == articleId) {
+                      return article.copyWith(
+                        upvotes: counts['upvotes'] ?? 0,
+                        downvotes: counts['downvotes'] ?? 0,
+                        userVote: voteType == null 
+                          ? 0 
+                          : voteType == VoteType.upvote ? 1 : -1,
+                      );
+                    }
+                    return article;
+                  }).toList();
+                }
+
+                // Update current view
+                final updatedArticles = articles.map((article) {
+                  if (article.id == articleId) {
+                    return article.copyWith(
+                      upvotes: counts['upvotes'] ?? 0,
+                      downvotes: counts['downvotes'] ?? 0,
+                      userVote: voteType == null 
+                        ? 0 
+                        : voteType == VoteType.upvote ? 1 : -1,
+                    );
+                  }
+                  return article;
+                }).toList();
+
+                emit(NewsState.loaded(
+                  articles: updatedArticles,
+                  isLoadingMore: isLoadingMore,
+                  hasMoreData: hasMoreData,
+                ));
+              },
+              orElse: () {},
+            );
+          }
         },
       );
     },
