@@ -5,19 +5,37 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:amaravati_chamber/core/app/app.dart';
 import 'package:amaravati_chamber/dependency_injection.dart';
 import 'package:amaravati_chamber/core/monitoring/sentry_monitoring.dart';
+import 'package:amaravati_chamber/core/logging/app_logger.dart';
+
 void main() async {
+  AppLogger.info('Starting application initialization');
+  
   await SentryMonitoring.initialize(
     dsn: 'https://c29f6c71f35d4fddce84079d1fd11f5e@o4508407207690240.ingest.us.sentry.io/4508407209000961',
     appRunner: () async {
       WidgetsFlutterBinding.ensureInitialized();
+      AppLogger.debug('Flutter binding initialized');
 
-      await _initializeSupabase();
-      await _initializeHive();
-      await configureDependencyInjection();
+      try {
+        await _initializeSupabase();
+        AppLogger.info('Supabase initialized successfully');
+        
+        await _initializeHive();
+        AppLogger.info('Hive initialized successfully');
+        
+        await configureDependencyInjection();
+        AppLogger.info('Dependency injection configured');
 
-      runApp(
-        const FlutterSupabaseStarterApp(),
-      );
+        runApp(const FlutterSupabaseStarterApp());
+        AppLogger.info('Application started successfully');
+      } catch (e, stackTrace) {
+        AppLogger.error(
+          'Failed to initialize application',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        rethrow;
+      }
     },
   );
 }

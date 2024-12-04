@@ -8,6 +8,8 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:amaravati_chamber/dependency_injection.dart';
 import '../../../../core/widgets/vote_buttons.dart';
 import '../../../../core/voting/domain/repositories/i_voting_repository.dart';
+import 'package:amaravati_chamber/core/logging/app_logger.dart';
+import '../../../../core/monitoring/sentry_monitoring.dart';
 
 class NewsContent extends StatefulWidget {
   const NewsContent({super.key});
@@ -26,14 +28,17 @@ class _NewsContentState extends State<NewsContent> {
   @override
   void initState() {
     super.initState();
+    AppLogger.debug('Initializing NewsContent widget');
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppLogger.info('Loading initial news articles');
       context.read<NewsCubit>().loadNews();
     });
   }
 
   @override
   void dispose() {
+    AppLogger.debug('Disposing NewsContent widget');
     _scrollController.dispose();
     super.dispose();
   }
@@ -41,11 +46,15 @@ class _NewsContentState extends State<NewsContent> {
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
+      AppLogger.debug('Loading more articles - reached scroll threshold');
       context.read<NewsCubit>().loadMoreArticles();
     }
   }
 
   void _showSearchModal(BuildContext context) {
+
+    AppLogger.debug('Opening search modal');
+
     final searchNewsCubit = getIt<NewsCubit>();
 
     showModalBottomSheet(
@@ -100,6 +109,7 @@ class _NewsContentState extends State<NewsContent> {
                       ),
                     ),
                     onChanged: (value) {
+                      AppLogger.debug('Search query changed: $value');
                       searchNewsCubit.searchAllArticles(value);
                     },
                   ),
@@ -188,14 +198,19 @@ class _NewsContentState extends State<NewsContent> {
                 height: 50,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
+                  AppLogger.warning('Failed to load article image: ${article.imageUrl}');
+                  SentryMonitoring.captureException(
+                    error,
+                    stackTrace,
+                  );
                   return Container(
-                    width: 50,
-                    height: 50,
+                    height: 200,
                     color: Theme.of(context).colorScheme.surfaceVariant,
-                    child: Icon(
-                      Icons.error,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    child: Center(
+                      child: Icon(
+                        Icons.error,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   );
                 },
@@ -307,22 +322,32 @@ class _NewsContentState extends State<NewsContent> {
                 ),
               );
             },
-            error: (message) => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Error: $message',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context.read<NewsCubit>().loadNews(),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
+            error: (message) {
+              AppLogger.error('Error loading news: $message');
+              SentryMonitoring.captureException(
+                Exception('News loading error: $message'),
+                StackTrace.current,
+              );
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Error: $message',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        AppLogger.info('User retrying news load after error');
+                        context.read<NewsCubit>().loadNews();
+                      },
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            },
           );
         },
       ),
@@ -341,6 +366,12 @@ Widget _buildArticleCard(BuildContext context, NewsArticle article) {
     child: InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () {
+        AppLogger.info('User opened article: ${article.id}');
+        SentryMonitoring.addBreadcrumb(
+          message: 'Article opened',
+          category: 'user_action',
+          data: {'article_id': article.id},
+        );
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -362,6 +393,11 @@ Widget _buildArticleCard(BuildContext context, NewsArticle article) {
                 height: 200,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
+                  AppLogger.warning('Failed to load article image: ${article.imageUrl}');
+                  SentryMonitoring.captureException(
+                    error,
+                    stackTrace,
+                  );
                   return Container(
                     height: 200,
                     color: Theme.of(context).colorScheme.surfaceVariant,
@@ -425,11 +461,20 @@ Widget _buildArticleCard(BuildContext context, NewsArticle article) {
                       userVote: article.userVote,
                       upvotes: article.upvotes,
                       downvotes: article.downvotes,
-                      onVote: (VoteType? voteType) {
-                        context.read<NewsCubit>().updateVoteAndRefresh(
-                          articleId: article.id, 
-                          voteType: voteType,
-                        );
+                      onVote: (VoteType? voteType) async {
+                        AppLogger.info('User voted on article ${article.id}: ${voteType.toString()}');
+                        try {
+                          await context.read<NewsCubit>().updateVoteAndRefresh(
+                            articleId: article.id, 
+                            voteType: voteType,
+                          );
+                        } catch (error, stackTrace) {
+                          AppLogger.error('Error while voting: $error');
+                          SentryMonitoring.captureException(
+                            error,
+                            stackTrace,
+                          );
+                        }
                       },
                     ),
                   ],
