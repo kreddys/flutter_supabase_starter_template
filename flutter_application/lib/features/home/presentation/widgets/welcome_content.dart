@@ -31,6 +31,9 @@ class WelcomeContent extends StatelessWidget {
                 try {
                   throw Exception('Test Sentry Error from Home Page');
                 } catch (error, stackTrace) {
+
+                  await SentryMonitoring.captureException(error, stackTrace);
+                  
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Test error sent to Sentry'),

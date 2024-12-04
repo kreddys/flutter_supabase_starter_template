@@ -7,7 +7,7 @@ import 'package:amaravati_chamber/dependency_injection.dart';
 import 'package:amaravati_chamber/core/monitoring/sentry_monitoring.dart';
 void main() async {
   await SentryMonitoring.initialize(
-    dsn: 'https://c29f6c71f35d4fddce84079d1fd11f5e@o4508407207690240.ingest.us.sentry.io/4508407209000961∂¬',
+    dsn: 'https://c29f6c71f35d4fddce84079d1fd11f5e@o4508407207690240.ingest.us.sentry.io/4508407209000961',
     appRunner: () async {
       WidgetsFlutterBinding.ensureInitialized();
 
