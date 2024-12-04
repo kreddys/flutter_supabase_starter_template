@@ -5,6 +5,8 @@ import 'package:amaravati_chamber/features/theme_mode/domain/use_case/get_or_set
 import 'package:amaravati_chamber/features/theme_mode/domain/use_case/set_theme_mode_id_use_case.dart';
 import 'package:injectable/injectable.dart';
 import 'package:meta/meta.dart';
+import '../../../../core/logging/app_logger.dart';
+import '../../../../core/monitoring/sentry_monitoring.dart';
 
 part 'theme_mode_state.dart';
 
@@ -13,38 +15,61 @@ class ThemeModeCubit extends Cubit<ThemeModeState> {
   ThemeModeCubit(
     this._getOrSetInitialThemeModeUseCase,
     this._setThemeModeUseCase,
-  ) : super(
-          const ThemeModeState(),
-        );
+  ) : super(const ThemeModeState());
 
   final GetOrSetInitialThemeModeUseCase _getOrSetInitialThemeModeUseCase;
   final SetThemeModeUseCase _setThemeModeUseCase;
 
   void getCurrentTheme() {
-    var systemThemeModeId = ThemeMode.system.index;
+    try {
+      AppLogger.debug('Getting current theme');
+      var systemThemeModeId = ThemeMode.system.index;
 
-    var themeModeId = _getOrSetInitialThemeModeUseCase.execute(
-      GetOrSetInitialThemeModeUseCaseParams(
-        currentThemeModeId: systemThemeModeId,
-      ),
-    );
+      var themeModeId = _getOrSetInitialThemeModeUseCase.execute(
+        GetOrSetInitialThemeModeUseCaseParams(
+          currentThemeModeId: systemThemeModeId,
+        ),
+      );
 
-    emit(state.copyWith(
-      selectedThemeMode: ThemeMode.values[themeModeId],
-    ));
+      AppLogger.info('Theme retrieved: ${ThemeMode.values[themeModeId]}');
+      emit(state.copyWith(
+        selectedThemeMode: ThemeMode.values[themeModeId],
+      ));
+    } catch (error, stackTrace) {
+      AppLogger.error('Failed to get current theme: $error');
+      SentryMonitoring.captureException(
+        error,
+        stackTrace,
+        tagValue: 'theme_get_failure',
+      );
+    }
   }
 
   void setTheme(int? themeModeIndex) {
     if (themeModeIndex == null) return;
 
-    _setThemeModeUseCase.execute(SetThemeModeUseCaseParams(
-      themeModeIndex: themeModeIndex,
-    ));
+    try {
+      AppLogger.info('Setting theme mode: ${state.modes[themeModeIndex]}');
+      SentryMonitoring.addBreadcrumb(
+        message: 'Theme changed',
+        category: 'theme',
+        data: {'theme_mode': state.modes[themeModeIndex].toString()},
+      );
 
-    emit(
-      state.copyWith(
+      _setThemeModeUseCase.execute(SetThemeModeUseCaseParams(
+        themeModeIndex: themeModeIndex,
+      ));
+
+      emit(state.copyWith(
         selectedThemeMode: state.modes[themeModeIndex],
-      ),
-    );
+      ));
+    } catch (error, stackTrace) {
+      AppLogger.error('Failed to set theme: $error');
+      SentryMonitoring.captureException(
+        error,
+        stackTrace,
+        tagValue: 'theme_set_failure',
+      );
+    }
   }
 }

@@ -6,6 +6,8 @@ import 'package:amaravati_chamber/features/settings/presentation/page/settings_p
 import 'package:injectable/injectable.dart';
 import 'package:meta/meta.dart';
 import 'package:amaravati_chamber/features/news/presentation/widgets/news_content.dart';
+import '../../../../../core/logging/app_logger.dart';
+import '../../../../../core/monitoring/sentry_monitoring.dart';
 
 part 'bottom_navigation_bar_state.dart';
 
@@ -17,8 +19,16 @@ class BottomNavigationBarCubit extends Cubit<BottomNavigationBarState> {
         );
 
   void switchTab(int index) {
-    emit(state.copyWith(
-      selectedIndex: index,
-    ));
+    AppLogger.info('Tab switched to index: $index');
+    SentryMonitoring.addBreadcrumb(
+      message: 'Tab switched',
+      category: 'navigation',
+      data: {
+        'tab_index': index,
+        'tab_name': state.tabs[index].label,
+      },
+    );
+    
+    emit(state.copyWith(selectedIndex: index));
   }
 }

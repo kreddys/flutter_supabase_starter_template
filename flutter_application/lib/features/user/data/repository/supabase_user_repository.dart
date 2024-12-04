@@ -5,6 +5,8 @@ import 'package:amaravati_chamber/features/user/domain/repository/user_repositor
 import 'package:injectable/injectable.dart';
 import 'package:supabase/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/logging/app_logger.dart';
+import '../../../../core/monitoring/sentry_monitoring.dart';
 
 @Injectable(as: UserRepository)
 class SupabaseUserRepository implements UserRepository {
@@ -17,15 +19,28 @@ class SupabaseUserRepository implements UserRepository {
   final FunctionsClient _functionsClient;
 
   @override
-  Future<void> changeEmailAddress(
-    String newEmailAddress,
-  ) async {
+  Future<void> changeEmailAddress(String newEmailAddress) async {
     try {
+      AppLogger.info('Attempting to change email address');
+      SentryMonitoring.addBreadcrumb(
+        message: 'Email address change attempted',
+        category: 'user',
+        data: {'new_email': newEmailAddress},
+      );
+
       await _supabaseAuth.updateUser(
         UserAttributes(email: newEmailAddress),
         emailRedirectTo: kIsWeb ? null : Urls.changeEmailCallbackUrl,
       );
-    } on AuthException catch (error) {
+      
+      AppLogger.info('Email change request sent successfully');
+    } on AuthException catch (error, stackTrace) {
+      AppLogger.error('Failed to change email: ${error.message}');
+      await SentryMonitoring.captureException(
+        error,
+        stackTrace,
+        tagValue: 'email_change_failure',
+      );
       throw (ChangeEmailAddressException(message: error.message));
     }
   }
