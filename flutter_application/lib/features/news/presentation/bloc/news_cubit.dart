@@ -4,25 +4,34 @@ import '../../domain/repositories/i_news_repository.dart';
 import '../../domain/entities/news_article.dart';
 import 'news_state.dart';
 import '../../../../core/voting/domain/repositories/i_voting_repository.dart';
+import '../../../../core/logging/app_logger.dart';
+import '../../../../core/monitoring/sentry_monitoring.dart';
 
 @injectable
 class NewsCubit extends Cubit<NewsState> {
   final INewsRepository _newsRepository;
-  final IVotingRepository _votingRepository; // Add this
+  final IVotingRepository _votingRepository;
   
   List<NewsArticle> _allArticles = [];
-  List<NewsArticle> _searchResults = []; // New list for search results
+  List<NewsArticle> _searchResults = [];
   int _currentPage = 1;
   static const int _itemsPerPage = 10;
   bool _hasMoreData = true;
   bool _isLoadingMore = false;
 
   NewsCubit(
-        this._newsRepository,
-        this._votingRepository, 
-        ) : super(const NewsState.initial());
+    this._newsRepository,
+    this._votingRepository,
+  ) : super(const NewsState.initial());
 
   Future<void> loadNews() async {
+    AppLogger.info('Loading initial news articles');
+    SentryMonitoring.addBreadcrumb(
+      message: 'Loading news articles',
+      category: 'news',
+      data: {'page': 1},
+    );
+
     emit(const NewsState.loading());
     _currentPage = 1;
     _hasMoreData = true;
@@ -34,8 +43,17 @@ class NewsCubit extends Cubit<NewsState> {
     );
     
     result.fold(
-      (error) => emit(NewsState.error(error)),
+      (error) {
+        AppLogger.error('Failed to load news articles: $error');
+        SentryMonitoring.captureException(
+          error,
+          StackTrace.current,
+          tagValue: 'news_load_failure',
+        );
+        emit(NewsState.error(error));
+      },
       (articles) {
+        AppLogger.info('Successfully loaded ${articles.length} articles');
         _allArticles = articles;
         _hasMoreData = articles.length >= _itemsPerPage;
         emit(NewsState.loaded(
@@ -48,7 +66,17 @@ class NewsCubit extends Cubit<NewsState> {
   }
 
   Future<void> loadMoreArticles() async {
-    if (!_hasMoreData || _isLoadingMore) return;
+    if (!_hasMoreData || _isLoadingMore) {
+      AppLogger.debug('Skipping loadMore - hasMoreData: $_hasMoreData, isLoadingMore: $_isLoadingMore');
+      return;
+    }
+
+    AppLogger.info('Loading more articles - page: ${_currentPage + 1}');
+    SentryMonitoring.addBreadcrumb(
+      message: 'Loading more articles',
+      category: 'news',
+      data: {'page': _currentPage + 1},
+    );
 
     _isLoadingMore = true;
     emit(NewsState.loaded(
@@ -64,10 +92,21 @@ class NewsCubit extends Cubit<NewsState> {
 
     result.fold(
       (error) {
+        AppLogger.error('Failed to load more articles: $error');
+        SentryMonitoring.captureException(
+          error,
+          StackTrace.current,
+          tagValue: 'load_more_articles_failure',
+        );
         _isLoadingMore = false;
-        emit(NewsState.error(error));
+        emit(NewsState.loaded(
+          articles: _allArticles,
+          isLoadingMore: false,
+          hasMoreData: _hasMoreData,
+        ));
       },
       (newArticles) {
+        AppLogger.info('Successfully loaded ${newArticles.length} more articles');
         _currentPage++;
         _allArticles.addAll(newArticles);
         _hasMoreData = newArticles.length >= _itemsPerPage;
@@ -81,9 +120,11 @@ class NewsCubit extends Cubit<NewsState> {
     );
   }
 
-  // Local search functionality
   void searchArticles(String query) {
+    AppLogger.info('Performing local search with query: "$query"');
+    
     if (query.isEmpty) {
+      AppLogger.debug('Empty search query, showing all articles');
       emit(NewsState.loaded(
         articles: _allArticles,
         isLoadingMore: false,
@@ -98,6 +139,7 @@ class NewsCubit extends Cubit<NewsState> {
       return titleMatch || descriptionMatch;
     }).toList();
 
+    AppLogger.info('Local search completed with ${filteredArticles.length} results');
     emit(NewsState.loaded(
       articles: filteredArticles,
       isLoadingMore: false,
@@ -105,11 +147,18 @@ class NewsCubit extends Cubit<NewsState> {
     ));
   }
 
-  // API-based search functionality
   Future<void> searchAllArticles(String query) async {
+    AppLogger.info('Performing API search with query: "$query"');
+    SentryMonitoring.addBreadcrumb(
+      message: 'Searching articles',
+      category: 'news',
+      data: {'query': query},
+    );
+
     if (query.isEmpty) {
+      AppLogger.debug('Empty search query, clearing results');
       emit(NewsState.loaded(
-        articles: _searchResults = [], // Clear search results
+        articles: _searchResults = [],
         isLoadingMore: false,
         hasMoreData: _hasMoreData,
       ));
@@ -117,122 +166,69 @@ class NewsCubit extends Cubit<NewsState> {
     }
 
     emit(const NewsState.loading());
-
-    // Reset pagination values
-    _currentPage = 1;
-    _hasMoreData = true;
     
     final result = await _newsRepository.getNewsArticles(
       page: _currentPage,
-      itemsPerPage: 999999, // Increased items per page for search
+      itemsPerPage: 999999,
       searchQuery: query,
     );
     
     result.fold(
-      (error) => emit(NewsState.error(error)),
+      (error) {
+        AppLogger.error('Search failed: $error');
+        SentryMonitoring.captureException(
+          error,
+          StackTrace.current,
+          tagValue: 'search_articles_failure',
+        );
+        emit(NewsState.error(error));
+      },
       (articles) {
-        _searchResults = articles; // Store search results separately
+        AppLogger.info('Search completed with ${articles.length} results');
+        _searchResults = articles;
         emit(NewsState.loaded(
           articles: articles,
           isLoadingMore: false,
-          hasMoreData: false, // We'll get all relevant results in one call for search
+          hasMoreData: false,
         ));
       },
     );
   }
 
-  void restoreMainArticles() {
-    emit(NewsState.loaded(
-        articles: _allArticles,
-        isLoadingMore: _isLoadingMore,
-        hasMoreData: _hasMoreData,
-      ));
+  Future<void> updateVoteAndRefresh({
+    required String articleId,
+    required VoteType? voteType,
+  }) async {
+    AppLogger.info('Updating vote for article: $articleId, vote type: $voteType');
+    SentryMonitoring.addBreadcrumb(
+      message: 'Updating article vote',
+      category: 'news',
+      data: {
+        'articleId': articleId,
+        'voteType': voteType?.toString(),
+      },
+    );
+
+    final result = await _votingRepository.vote(
+      entityId: articleId,
+      entityType: EntityType.article,
+      voteType: voteType,
+    );
+
+    result.fold(
+      (error) {
+        AppLogger.error('Failed to update vote: $error');
+        SentryMonitoring.captureException(
+          error,
+          StackTrace.current,
+          tagValue: 'update_vote_failure',
+        );
+        emit(NewsState.error(error));
+      },
+      (_) async {
+        AppLogger.info('Vote updated successfully');
+        loadNews();
+      },
+    );
   }
-
-Future<void> updateVoteAndRefresh({
-  required String articleId,
-  required VoteType? voteType,
-}) async {
-  // First perform the vote
-  final result = await _votingRepository.vote(
-    entityId: articleId,
-    entityType: EntityType.article,
-    voteType: voteType,
-  );
-
-  result.fold(
-    (error) => emit(NewsState.error(error)),
-    (_) async {
-      final currentState = state;
-      
-      currentState.maybeWhen(
-        loaded: (articles, isLoadingMore, hasMoreData) async {
-          // Get vote counts
-          final voteCounts = await _votingRepository.getVoteCounts(
-            entityId: articleId,
-            entityType: EntityType.article,
-          );
-          
-          // Get user's vote status separately
-          final userVoteResult = await _votingRepository.getUserVote(
-            entityId: articleId,
-            entityType: EntityType.article,
-          );
-
-          // Handle both results
-          if (voteCounts.isRight() && userVoteResult.isRight()) {
-            final counts = voteCounts.getOrElse(() => {'upvotes': 0, 'downvotes': 0});
-            final userVoteStatus = userVoteResult.getOrElse(() => null);
-
-            // Function to update a single article
-            NewsArticle updateArticle(NewsArticle article) {
-              if (article.id == articleId) {
-                return article.copyWith(
-                  upvotes: counts['upvotes'] ?? 0,
-                  downvotes: counts['downvotes'] ?? 0,
-                  // Set userVote based on the actual server response
-                  userVote: userVoteStatus == null ? 0 :
-                           userVoteStatus == VoteType.upvote ? 1 : -1,
-                );
-              }
-              return article;
-            }
-
-            // Update all lists using the same update function
-            _allArticles = _allArticles.map(updateArticle).toList();
-            _searchResults = _searchResults.map(updateArticle).toList();
-            final updatedArticles = articles.map(updateArticle).toList();
-
-            emit(NewsState.loaded(
-              articles: updatedArticles,
-              isLoadingMore: isLoadingMore,
-              hasMoreData: hasMoreData,
-            ));
-          } else {
-            emit(NewsState.error("Failed to update vote status"));
-          }
-        },
-        orElse: () {},
-      );
-    },
-  );
-}
-
-  // Helper method to check if currently loading
-  bool get isLoading => state.maybeWhen(
-    loading: () => true,
-    orElse: () => false,
-  );
-
-  // Helper method to get current articles
-  List<NewsArticle> get currentArticles => state.maybeWhen(
-    loaded: (articles, _, __) => articles,
-    orElse: () => [],
-  );
-
-  // Helper method to check if more data is available
-  bool get hasMoreData => state.maybeWhen(
-    loaded: (_, __, hasMore) => hasMore,
-    orElse: () => false,
-  );
 }
