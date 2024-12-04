@@ -22,30 +22,6 @@ class WelcomeContent extends StatelessWidget {
         scrolledUnderElevation: 0, // Removes elevation when scrolling
         surfaceTintColor: Colors.transparent, // Removes surface tint
         elevation: 0,
-        actions: [
-          // Add the Sentry test button
-          Padding(
-            padding: const EdgeInsets.only(right: Spacing.s16),
-            child: TextButton(
-              onPressed: () async {
-                try {
-                  throw Exception('Test Sentry Error from Home Page');
-                } catch (error, stackTrace) {
-
-                  await SentryMonitoring.captureException(error, stackTrace);
-                  
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Test error sent to Sentry'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                }
-              },
-              child: const Text('Test Sentry'),
-            ),
-          ),
-        ], // Removes default elevation
       ),
       
       body: SafeArea(
