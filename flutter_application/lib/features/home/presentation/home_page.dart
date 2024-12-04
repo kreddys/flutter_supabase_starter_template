@@ -4,6 +4,8 @@ import 'package:amaravati_chamber/dependency_injection.dart';
 import 'package:amaravati_chamber/features/home/presentation/bloc/bottom_navigation_bar/bottom_navigation_bar_cubit.dart';
 import 'package:amaravati_chamber/features/home/presentation/widgets/home_navigation_bar.dart';
 import '../../news/presentation/bloc/news_cubit.dart';
+import '../../../../core/logging/app_logger.dart';
+import '../../../../core/monitoring/sentry_monitoring.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({
@@ -12,18 +14,36 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppLogger.debug('Building HomePage');
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) => getIt<BottomNavigationBarCubit>(),
+          create: (context) {
+            AppLogger.debug('Creating BottomNavigationBarCubit');
+            return getIt<BottomNavigationBarCubit>();
+          },
         ),
         BlocProvider(
-          create: (context) => getIt<NewsCubit>(),
+          create: (context) {
+            AppLogger.debug('Creating NewsCubit');
+            return getIt<NewsCubit>();
+          },
         ),
       ],
       child: BlocBuilder<BottomNavigationBarCubit, BottomNavigationBarState>(
-        buildWhen: (previous, current) => 
-            current.selectedIndex != previous.selectedIndex,
+        buildWhen: (previous, current) {
+          final changed = current.selectedIndex != previous.selectedIndex;
+          if (changed) {
+            AppLogger.info(
+              'Navigation changed from ${previous.selectedIndex} to ${current.selectedIndex}'
+            );
+            SentryMonitoring.addBreadcrumb(
+              message: 'Tab navigation changed to ${current.selectedIndex}',
+              category: 'navigation',
+            );
+          }
+          return changed;
+        },
         builder: (context, state) {
           return Scaffold(
             body: SafeArea(
