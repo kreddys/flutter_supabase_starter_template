@@ -243,6 +243,7 @@ Future<void> updateVoteAndRefresh({
   required String articleId,
   required VoteType? voteType,
 }) async {
+  // First perform the vote
   final result = await _votingRepository.vote(
     entityId: articleId,
     entityType: EntityType.article,
@@ -256,45 +257,72 @@ Future<void> updateVoteAndRefresh({
       
       currentState.maybeWhen(
         loaded: (articles, isLoadingMore, hasMoreData) async {
-          // Get both vote counts and user's vote status
+          // Get vote counts
           final voteCounts = await _votingRepository.getVoteCounts(
             entityId: articleId,
             entityType: EntityType.article,
           );
           
+          // Get user's vote status separately
           final userVoteResult = await _votingRepository.getUserVote(
             entityId: articleId,
             entityType: EntityType.article,
           );
 
-          voteCounts.fold(
-            (error) => emit(NewsState.error(error)),
-            (counts) {
-              userVoteResult.fold(
-                (error) => emit(NewsState.error(error)),
-                (userVote) {
-                  // Update articles with correct user vote status
-                  final updatedArticles = articles.map((article) {
-                    if (article.id == articleId) {
-                      return article.copyWith(
-                        upvotes: counts['upvotes'] ?? 0,
-                        downvotes: counts['downvotes'] ?? 0,
-                        userVote: userVote == null ? 0 :
-                                 userVote == VoteType.upvote ? 1 : -1,
-                      );
-                    }
-                    return article;
-                  }).toList();
+          // Handle both results
+          if (voteCounts.isRight() && userVoteResult.isRight()) {
+            final counts = voteCounts.getOrElse(() => {'upvotes': 0, 'downvotes': 0});
+            final userVoteStatus = userVoteResult.getOrElse(() => null);
 
-                  emit(NewsState.loaded(
-                    articles: updatedArticles,
-                    isLoadingMore: isLoadingMore,
-                    hasMoreData: hasMoreData,
-                  ));
-                },
-              );
-            },
-          );
+            // Update _allArticles
+            _allArticles = _allArticles.map((article) {
+              if (article.id == articleId) {
+                return article.copyWith(
+                  upvotes: counts['upvotes'] ?? 0,
+                  downvotes: counts['downvotes'] ?? 0,
+                  userVote: userVoteStatus == null ? 0 :
+                           userVoteStatus == VoteType.upvote ? 1 : -1,
+                );
+              }
+              return article;
+            }).toList();
+
+            // Update _searchResults if they exist
+            if (_searchResults.isNotEmpty) {
+              _searchResults = _searchResults.map((article) {
+                if (article.id == articleId) {
+                  return article.copyWith(
+                    upvotes: counts['upvotes'] ?? 0,
+                    downvotes: counts['downvotes'] ?? 0,
+                    userVote: userVoteStatus == null ? 0 :
+                             userVoteStatus == VoteType.upvote ? 1 : -1,
+                  );
+                }
+                return article;
+              }).toList();
+            }
+
+            // Update current view
+            final updatedArticles = articles.map((article) {
+              if (article.id == articleId) {
+                return article.copyWith(
+                  upvotes: counts['upvotes'] ?? 0,
+                  downvotes: counts['downvotes'] ?? 0,
+                  userVote: userVoteStatus == null ? 0 :
+                           userVoteStatus == VoteType.upvote ? 1 : -1,
+                );
+              }
+              return article;
+            }).toList();
+
+            emit(NewsState.loaded(
+              articles: updatedArticles,
+              isLoadingMore: isLoadingMore,
+              hasMoreData: hasMoreData,
+            ));
+          } else {
+            emit(NewsState.error("Failed to update vote status"));
+          }
         },
         orElse: () {},
       );
