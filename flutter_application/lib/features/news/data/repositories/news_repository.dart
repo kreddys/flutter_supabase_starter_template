@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/news_article.dart';
 import '../../domain/repositories/i_news_repository.dart';
 import '../../../../core/voting/domain/repositories/i_voting_repository.dart';
+import '../../../../core/logging/app_logger.dart';
+import '../../../../core/monitoring/sentry_monitoring.dart';
 
 @LazySingleton(as: INewsRepository)
 class NewsRepository implements INewsRepository {
@@ -18,6 +20,10 @@ class NewsRepository implements INewsRepository {
     int itemsPerPage = 10,
     String? searchQuery,
   }) async {
+    AppLogger.info(
+      'Fetching news articles - Page: $page, ItemsPerPage: $itemsPerPage, SearchQuery: $searchQuery'
+    );
+
     try {
       final offset = (page - 1) * itemsPerPage;
       final query = _supabaseClient.from('articles').select();
@@ -30,14 +36,16 @@ class NewsRepository implements INewsRepository {
           .order('published_at', ascending: false)
           .range(offset, offset + itemsPerPage - 1);
 
+      AppLogger.debug('Fetched ${response.length} articles from database');
+
       final articles = await Future.wait((response as List<dynamic>).map((post) async {
-        // Get vote counts for this article
+        AppLogger.debug('Processing article ${post['id']}');
+        
         final voteCounts = await _votingRepository.getVoteCounts(
           entityId: post['id'].toString(),
           entityType: EntityType.article,
         );
 
-        // Get current user's vote if logged in
         final userVote = await _votingRepository.getUserVote(
           entityId: post['id'].toString(),
           entityType: EntityType.article,
@@ -66,10 +74,19 @@ class NewsRepository implements INewsRepository {
         );
       }).toList());
 
+      AppLogger.info('Successfully processed ${articles.length} articles');
       return Right(articles);
     } catch (e, stackTrace) {
-      print('Error fetching news: $e');
-      print('Stack trace: $stackTrace');
+      AppLogger.error(
+        'Error fetching news articles: ${e.toString()}',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      await SentryMonitoring.captureException(
+        e,
+        stackTrace,
+        tagValue: 'news_fetch_failure',
+      );
       return Left('Error fetching news articles: ${e.toString()}');
     }
   }
