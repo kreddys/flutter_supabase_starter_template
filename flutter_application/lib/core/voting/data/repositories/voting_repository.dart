@@ -1,9 +1,10 @@
-// lib/core/voting/data/repositories/voting_repository.dart
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 import 'package:dartz/dartz.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:sentry/sentry.dart';
 import '../../domain/repositories/i_voting_repository.dart';
+import '../../../../core/monitoring/sentry_monitoring.dart';
 
 @LazySingleton(as: IVotingRepository)
 class VotingRepository implements IVotingRepository {
@@ -17,9 +18,15 @@ class VotingRepository implements IVotingRepository {
     required EntityType entityType,
     required VoteType? voteType,
   }) async {
+    final transaction = SentryMonitoring.startTransaction(
+      'vote',
+      'voting_operation',
+    );
+
     try {
       final userId = _supabaseClient.auth.currentUser?.id;
       if (userId == null) {
+        transaction.finish(status: const SpanStatus.unauthenticated());
         return const Left('User must be logged in to vote');
       }
 
@@ -33,7 +40,6 @@ class VotingRepository implements IVotingRepository {
 
       if (existingVote != null) {
         if (voteType == null) {
-          // Remove vote
           await _supabaseClient
               .from('votes')
               .delete()
@@ -41,7 +47,6 @@ class VotingRepository implements IVotingRepository {
               .eq('entity_type', entityType.name)
               .eq('user_id', userId);
         } else {
-          // Update vote
           await _supabaseClient
               .from('votes')
               .update({'vote_type': voteType.name})
@@ -50,7 +55,6 @@ class VotingRepository implements IVotingRepository {
               .eq('user_id', userId);
         }
       } else if (voteType != null) {
-        // Insert new vote
         await _supabaseClient.from('votes').insert({
           'entity_id': entityId,
           'entity_type': entityType.name,
@@ -59,9 +63,16 @@ class VotingRepository implements IVotingRepository {
         });
       }
 
+      transaction.finish(status: const SpanStatus.ok());
       return const Right(true);
-    } catch (e) {
-      return Left('Error updating vote: ${e.toString()}');
+    } catch (error, stackTrace) {
+      transaction.finish(status: const SpanStatus.internalError());
+      await SentryMonitoring.captureException(
+        error,
+        stackTrace,
+        tagValue: 'vote_failure',
+      );
+      return Left('Error updating vote: ${error.toString()}');
     }
   }
 
@@ -70,6 +81,11 @@ class VotingRepository implements IVotingRepository {
     required String entityId,
     required EntityType entityType,
   }) async {
+    final transaction = SentryMonitoring.startTransaction(
+      'get_vote_counts',
+      'voting_operation',
+    );
+
     try {
       final response = await _supabaseClient
           .from('votes')
@@ -81,9 +97,16 @@ class VotingRepository implements IVotingRepository {
       final upvotes = votes.where((v) => v['vote_type'] == 'upvote').length;
       final downvotes = votes.where((v) => v['vote_type'] == 'downvote').length;
 
+      transaction.finish(status: const SpanStatus.ok());
       return Right({'upvotes': upvotes, 'downvotes': downvotes});
-    } catch (e) {
-      return Left('Error fetching vote counts: ${e.toString()}');
+    } catch (error, stackTrace) {
+      transaction.finish(status: const SpanStatus.internalError());
+      await SentryMonitoring.captureException(
+        error,
+        stackTrace,
+        tagValue: 'get_vote_counts_failure',
+      );
+      return Left('Error fetching vote counts: ${error.toString()}');
     }
   }
 
@@ -92,9 +115,17 @@ class VotingRepository implements IVotingRepository {
     required String entityId,
     required EntityType entityType,
   }) async {
+    final transaction = SentryMonitoring.startTransaction(
+      'get_user_vote',
+      'voting_operation',
+    );
+
     try {
       final userId = _supabaseClient.auth.currentUser?.id;
-      if (userId == null) return const Right(null);
+      if (userId == null) {
+        transaction.finish(status: const SpanStatus.ok());
+        return const Right(null);
+      }
 
       final response = await _supabaseClient
           .from('votes')
@@ -104,15 +135,25 @@ class VotingRepository implements IVotingRepository {
           .eq('user_id', userId)
           .maybeSingle();
 
-      if (response == null) return const Right(null);
+      if (response == null) {
+        transaction.finish(status: const SpanStatus.ok());
+        return const Right(null);
+      }
 
       debugPrint(response.toString());
 
+      transaction.finish(status: const SpanStatus.ok());
       return Right(
         response['vote_type'] == 'upvote' ? VoteType.upvote : VoteType.downvote,
       );
-    } catch (e) {
-      return Left('Error fetching user vote: ${e.toString()}');
+    } catch (error, stackTrace) {
+      transaction.finish(status: const SpanStatus.internalError());
+      await SentryMonitoring.captureException(
+        error,
+        stackTrace,
+        tagValue: 'get_user_vote_failure',
+      );
+      return Left('Error fetching user vote: ${error.toString()}');
     }
   }
 }
