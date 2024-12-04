@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import '../../../../core/monitoring/sentry_monitoring.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:amaravati_chamber/core/use_cases/no_params.dart';
@@ -45,15 +45,32 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         );
   }
 
-  Future<void> _onInitialAuthChecked(
-    AuthInitialCheckRequested event,
-    Emitter<AuthState> emit,
-  ) async {
+Future<void> _onInitialAuthChecked(
+  AuthInitialCheckRequested event,
+  Emitter<AuthState> emit,
+) async {
+  try {
     AuthUserEntity? signedInUser = _getLoggedInUserUseCase.execute(NoParams());
+    
+    // Add breadcrumb for auth state check
+    await SentryMonitoring.addBreadcrumb(
+      message: 'Initial auth state checked',
+      category: 'auth',
+      data: {'isAuthenticated': signedInUser != null},
+    );
+
     signedInUser != null
         ? emit(AuthUserAuthenticated(signedInUser))
         : emit(const AuthUserUnauthenticated());
+  } catch (error, stackTrace) {
+    await SentryMonitoring.captureException(
+      error,
+      stackTrace,
+      tagValue: 'auth_check_failure',
+    );
+    emit(const AuthUserUnauthenticated());
   }
+}
 
   Future<void> _onCurrentUserChanged(
     AuthOnCurrentUserChanged event,
@@ -64,12 +81,26 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         : emit(const AuthUserUnauthenticated());
   }
 
-  Future<void> _onLogoutButtonPressed(
-    AuthLogoutButtonPressed event,
-    Emitter<AuthState> emit,
-  ) async {
+Future<void> _onLogoutButtonPressed(
+  AuthLogoutButtonPressed event,
+  Emitter<AuthState> emit,
+) async {
+  try {
     await _logoutUseCase.execute(NoParams());
+    
+    // Add breadcrumb for logout
+    await SentryMonitoring.addBreadcrumb(
+      message: 'User logged out',
+      category: 'auth',
+    );
+  } catch (error, stackTrace) {
+    await SentryMonitoring.captureException(
+      error,
+      stackTrace,
+      tagValue: 'logout_failure',
+    );
   }
+}
 
   @override
   Future<void> close() {

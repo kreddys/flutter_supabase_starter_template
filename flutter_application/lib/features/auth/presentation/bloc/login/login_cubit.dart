@@ -2,7 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:amaravati_chamber/core/value_objects/email_value_object.dart';
 import 'package:amaravati_chamber/features/auth/domain/exception/login_with_email_exception.dart';
-
+import '../../../../../core/monitoring/sentry_monitoring.dart';
 import 'package:amaravati_chamber/features/auth/domain/use_case/login_with_email_use_case.dart';
 import 'package:formz/formz.dart';
 import 'package:injectable/injectable.dart';
@@ -45,7 +45,14 @@ class LoginCubit extends Cubit<LoginState> {
       emit(
         state.copyWith(status: FormzSubmissionStatus.success),
       );
-    } on Exception catch (e) {
+    } on Exception catch (e, stackTrace) {
+
+      await SentryMonitoring.captureException(
+        e,
+        stackTrace,
+        tagValue: 'login_failure',
+      );
+
       emit(state.copyWith(
         errorMessage: e is LoginWithEmailException ? e.message : null,
         status: FormzSubmissionStatus.failure,

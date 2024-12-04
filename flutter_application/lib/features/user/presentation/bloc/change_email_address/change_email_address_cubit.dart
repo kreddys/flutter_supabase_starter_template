@@ -6,6 +6,7 @@ import 'package:amaravati_chamber/features/user/domain/use_case/change_email_add
 import 'package:formz/formz.dart';
 import 'package:injectable/injectable.dart';
 import 'package:meta/meta.dart';
+import '../../../../../core/monitoring/sentry_monitoring.dart';
 
 part '../change_email_address/change_email_address_state.dart';
 
@@ -47,7 +48,14 @@ class ChangeEmailAddressCubit extends Cubit<ChangeEmailAddressState> {
         status: FormzSubmissionStatus.success,
         email: const EmailValueObject.pure(),
       ));
-    } on Exception catch (ex) {
+    } on Exception catch (ex, stackTrace) {
+
+      await SentryMonitoring.captureException(
+        ex,
+        stackTrace,
+        tagValue: 'change_email_failure',
+    );
+
       emit(state.copyWith(
         errorMessage: ex is ChangeEmailAddressException ? ex.message : null,
         status: FormzSubmissionStatus.failure,
