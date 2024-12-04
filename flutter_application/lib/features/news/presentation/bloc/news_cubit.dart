@@ -243,23 +243,26 @@ Future<void> updateVoteAndRefresh({
   required String articleId,
   required VoteType? voteType,
 }) async {
-  // First update the vote
   final result = await _votingRepository.vote(
     entityId: articleId,
     entityType: EntityType.article,
     voteType: voteType,
   );
 
-  // Then refresh the article's vote counts
   result.fold(
     (error) => emit(NewsState.error(error)),
     (_) async {
       final currentState = state;
-      if (currentState is! NewsState) return;
-
+      
       currentState.maybeWhen(
         loaded: (articles, isLoadingMore, hasMoreData) async {
+          // Get both vote counts and user's vote status
           final voteCounts = await _votingRepository.getVoteCounts(
+            entityId: articleId,
+            entityType: EntityType.article,
+          );
+          
+          final userVoteResult = await _votingRepository.getUserVote(
             entityId: articleId,
             entityType: EntityType.article,
           );
@@ -267,55 +270,29 @@ Future<void> updateVoteAndRefresh({
           voteCounts.fold(
             (error) => emit(NewsState.error(error)),
             (counts) {
-              // Update _allArticles
-              _allArticles = _allArticles.map((article) {
-                if (article.id == articleId) {
-                  return article.copyWith(
-                    upvotes: counts['upvotes'] ?? 0,
-                    downvotes: counts['downvotes'] ?? 0,
-                    userVote: voteType == null 
-                      ? 0 
-                      : voteType == VoteType.upvote ? 1 : -1,
-                  );
-                }
-                return article;
-              }).toList();
+              userVoteResult.fold(
+                (error) => emit(NewsState.error(error)),
+                (userVote) {
+                  // Update articles with correct user vote status
+                  final updatedArticles = articles.map((article) {
+                    if (article.id == articleId) {
+                      return article.copyWith(
+                        upvotes: counts['upvotes'] ?? 0,
+                        downvotes: counts['downvotes'] ?? 0,
+                        userVote: userVote == null ? 0 :
+                                 userVote == VoteType.upvote ? 1 : -1,
+                      );
+                    }
+                    return article;
+                  }).toList();
 
-              // Update _searchResults if they exist
-              if (_searchResults.isNotEmpty) {
-                _searchResults = _searchResults.map((article) {
-                  if (article.id == articleId) {
-                    return article.copyWith(
-                      upvotes: counts['upvotes'] ?? 0,
-                      downvotes: counts['downvotes'] ?? 0,
-                      userVote: voteType == null 
-                        ? 0 
-                        : voteType == VoteType.upvote ? 1 : -1,
-                    );
-                  }
-                  return article;
-                }).toList();
-              }
-
-              // Update current view
-              final updatedArticles = articles.map((article) {
-                if (article.id == articleId) {
-                  return article.copyWith(
-                    upvotes: counts['upvotes'] ?? 0,
-                    downvotes: counts['downvotes'] ?? 0,
-                    userVote: voteType == null 
-                      ? 0 
-                      : voteType == VoteType.upvote ? 1 : -1,
-                  );
-                }
-                return article;
-              }).toList();
-
-              emit(NewsState.loaded(
-                articles: updatedArticles,
-                isLoadingMore: isLoadingMore,
-                hasMoreData: hasMoreData,
-              ));
+                  emit(NewsState.loaded(
+                    articles: updatedArticles,
+                    isLoadingMore: isLoadingMore,
+                    hasMoreData: hasMoreData,
+                  ));
+                },
+              );
             },
           );
         },
