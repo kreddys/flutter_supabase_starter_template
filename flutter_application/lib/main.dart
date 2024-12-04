@@ -4,16 +4,21 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:amaravati_chamber/core/app/app.dart';
 import 'package:amaravati_chamber/dependency_injection.dart';
-
+import 'package:amaravati_chamber/core/monitoring/sentry_monitoring.dart';
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  await SentryMonitoring.initialize(
+    dsn: 'https://c29f6c71f35d4fddce84079d1fd11f5e@o4508407207690240.ingest.us.sentry.io/4508407209000961∂¬',
+    appRunner: () async {
+      WidgetsFlutterBinding.ensureInitialized();
 
-  await _initializeSupabase();
-  await _initializeHive();
-  configureDependencyInjection();
+      await _initializeSupabase();
+      await _initializeHive();
+      await configureDependencyInjection();
 
-  runApp(
-    const FlutterSupabaseStarterApp(),
+      runApp(
+        const FlutterSupabaseStarterApp(),
+      );
+    },
   );
 }
 

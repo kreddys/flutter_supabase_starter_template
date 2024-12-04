@@ -1,4 +1,5 @@
 // lib/core/voting/data/repositories/voting_repository.dart
+import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 import 'package:dartz/dartz.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -104,6 +105,8 @@ class VotingRepository implements IVotingRepository {
           .maybeSingle();
 
       if (response == null) return const Right(null);
+
+      debugPrint(response.toString());
 
       return Right(
         response['vote_type'] == 'upvote' ? VoteType.upvote : VoteType.downvote,

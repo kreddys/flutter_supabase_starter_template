@@ -149,96 +149,6 @@ class NewsCubit extends Cubit<NewsState> {
       ));
   }
 
-// In news_cubit.dart
-
-Future<void> updateVote({
-  required String articleId,
-  required VoteType? voteType,
-}) async {
-  final result = await _votingRepository.vote(
-    entityId: articleId,
-    entityType: EntityType.article,
-    voteType: voteType,
-  );
-
-  result.fold(
-    (error) {
-      // Handle error
-    },
-    (success) async {
-      final voteCounts = await _votingRepository.getVoteCounts(
-        entityId: articleId,
-        entityType: EntityType.article,
-      );
-
-      voteCounts.fold(
-        (error) {
-          // Handle error
-        },
-        (counts) {
-          final currentState = state;
-          if (currentState is NewsState) {
-            currentState.maybeWhen(
-              loaded: (articles, isLoadingMore, hasMoreData) {
-                // Update _allArticles
-                _allArticles = _allArticles.map((article) {
-                  if (article.id == articleId) {
-                    return article.copyWith(
-                      upvotes: counts['upvotes'] ?? 0,
-                      downvotes: counts['downvotes'] ?? 0,
-                      userVote: voteType == null 
-                        ? 0 
-                        : voteType == VoteType.upvote ? 1 : -1,
-                    );
-                  }
-                  return article;
-                }).toList();
-
-                // Update _searchResults if they exist
-                if (_searchResults.isNotEmpty) {
-                  _searchResults = _searchResults.map((article) {
-                    if (article.id == articleId) {
-                      return article.copyWith(
-                        upvotes: counts['upvotes'] ?? 0,
-                        downvotes: counts['downvotes'] ?? 0,
-                        userVote: voteType == null 
-                          ? 0 
-                          : voteType == VoteType.upvote ? 1 : -1,
-                      );
-                    }
-                    return article;
-                  }).toList();
-                }
-
-                // Update current view
-                final updatedArticles = articles.map((article) {
-                  if (article.id == articleId) {
-                    return article.copyWith(
-                      upvotes: counts['upvotes'] ?? 0,
-                      downvotes: counts['downvotes'] ?? 0,
-                      userVote: voteType == null 
-                        ? 0 
-                        : voteType == VoteType.upvote ? 1 : -1,
-                    );
-                  }
-                  return article;
-                }).toList();
-
-                emit(NewsState.loaded(
-                  articles: updatedArticles,
-                  isLoadingMore: isLoadingMore,
-                  hasMoreData: hasMoreData,
-                ));
-              },
-              orElse: () {},
-            );
-          }
-        },
-      );
-    },
-  );
-}
-
 Future<void> updateVoteAndRefresh({
   required String articleId,
   required VoteType? voteType,
@@ -274,46 +184,24 @@ Future<void> updateVoteAndRefresh({
             final counts = voteCounts.getOrElse(() => {'upvotes': 0, 'downvotes': 0});
             final userVoteStatus = userVoteResult.getOrElse(() => null);
 
-            // Update _allArticles
-            _allArticles = _allArticles.map((article) {
+            // Function to update a single article
+            NewsArticle updateArticle(NewsArticle article) {
               if (article.id == articleId) {
                 return article.copyWith(
                   upvotes: counts['upvotes'] ?? 0,
                   downvotes: counts['downvotes'] ?? 0,
+                  // Set userVote based on the actual server response
                   userVote: userVoteStatus == null ? 0 :
                            userVoteStatus == VoteType.upvote ? 1 : -1,
                 );
               }
               return article;
-            }).toList();
-
-            // Update _searchResults if they exist
-            if (_searchResults.isNotEmpty) {
-              _searchResults = _searchResults.map((article) {
-                if (article.id == articleId) {
-                  return article.copyWith(
-                    upvotes: counts['upvotes'] ?? 0,
-                    downvotes: counts['downvotes'] ?? 0,
-                    userVote: userVoteStatus == null ? 0 :
-                             userVoteStatus == VoteType.upvote ? 1 : -1,
-                  );
-                }
-                return article;
-              }).toList();
             }
 
-            // Update current view
-            final updatedArticles = articles.map((article) {
-              if (article.id == articleId) {
-                return article.copyWith(
-                  upvotes: counts['upvotes'] ?? 0,
-                  downvotes: counts['downvotes'] ?? 0,
-                  userVote: userVoteStatus == null ? 0 :
-                           userVoteStatus == VoteType.upvote ? 1 : -1,
-                );
-              }
-              return article;
-            }).toList();
+            // Update all lists using the same update function
+            _allArticles = _allArticles.map(updateArticle).toList();
+            _searchResults = _searchResults.map(updateArticle).toList();
+            final updatedArticles = articles.map(updateArticle).toList();
 
             emit(NewsState.loaded(
               articles: updatedArticles,

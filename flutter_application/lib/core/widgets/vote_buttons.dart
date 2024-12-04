@@ -11,7 +11,7 @@ class VoteButtons extends StatelessWidget {
   const VoteButtons({
     super.key,
     required this.entityId,
-    required this.userVote,
+    required this.userVote, // This should represent ONLY the current user's vote
     required this.upvotes,
     required this.downvotes,
     required this.onVote,
@@ -19,27 +19,33 @@ class VoteButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The icon and color should only change based on userVote
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
           icon: Icon(
+            // Only show filled icon if THIS user has upvoted
             userVote == 1 ? Icons.thumb_up : Icons.thumb_up_outlined,
             size: 20,
-            color: userVote == 1
-                ? Theme.of(context).colorScheme.primary
+            // Only show green if THIS user has upvoted
+            color: userVote == 1 
+                ? Theme.of(context).colorScheme.primary 
                 : null,
           ),
           onPressed: () => onVote(
             userVote == 1 ? null : VoteType.upvote,
           ),
         ),
+        // Show total upvotes count
         Text('$upvotes'),
         const SizedBox(width: 8),
         IconButton(
           icon: Icon(
+            // Only show filled icon if THIS user has downvoted
             userVote == -1 ? Icons.thumb_down : Icons.thumb_down_outlined,
             size: 20,
+            // Only show red if THIS user has downvoted
             color: userVote == -1
                 ? Theme.of(context).colorScheme.error
                 : null,
@@ -48,6 +54,7 @@ class VoteButtons extends StatelessWidget {
             userVote == -1 ? null : VoteType.downvote,
           ),
         ),
+        // Show total downvotes count
         Text('$downvotes'),
       ],
     );

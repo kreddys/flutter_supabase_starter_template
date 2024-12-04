@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:amaravati_chamber/core/constants/spacings.dart';
 import 'package:amaravati_chamber/core/extensions/build_context_extensions.dart';
 import 'package:amaravati_chamber/features/home/presentation/bloc/bottom_navigation_bar/bottom_navigation_bar_cubit.dart';
+import 'package:amaravati_chamber/core/monitoring/sentry_monitoring.dart';
 
 class WelcomeContent extends StatelessWidget {
   const WelcomeContent({
@@ -20,8 +21,30 @@ class WelcomeContent extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         scrolledUnderElevation: 0, // Removes elevation when scrolling
         surfaceTintColor: Colors.transparent, // Removes surface tint
-        elevation: 0, // Removes default elevation
+        elevation: 0,
+        actions: [
+          // Add the Sentry test button
+          Padding(
+            padding: const EdgeInsets.only(right: Spacing.s16),
+            child: TextButton(
+              onPressed: () async {
+                try {
+                  throw Exception('Test Sentry Error from Home Page');
+                } catch (error, stackTrace) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Test error sent to Sentry'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Test Sentry'),
+            ),
+          ),
+        ], // Removes default elevation
       ),
+      
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
