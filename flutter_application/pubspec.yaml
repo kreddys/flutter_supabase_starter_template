@@ -42,6 +42,7 @@ dev_dependencies:
   flutter_lints: ^2.0.0
   freezed: ^2.5.7
   build_runner: ^2.4.8
+  mockito: ^5.4.4
   injectable_generator:
 
 flutter:
