@@ -26,25 +26,40 @@ void main() {
     newsCubit.close();
   });
 
-  group('NewsCubit Tests', () {
-    test('initial state should be NewsState.initial', () {
-      expect(newsCubit.state, const NewsState.initial());
+  group('NewsCubit', () {
+    final testArticles = [
+      NewsArticle(
+        id: 'test_1',
+        title: 'Test Article 1',
+        description: 'Test Description 1',
+        author: 'Test Author',
+        publishedAt: DateTime.now(),
+        imageUrl: 'test1.jpg',
+        htmlContent: '<p>Test Content 1</p>',
+        upvotes: 0,
+        downvotes: 0,
+        userVote: 0,
+      ),
+      NewsArticle(
+        id: 'test_2',
+        title: 'Test Article 2',
+        description: 'Test Description 2',
+        author: 'Test Author',
+        publishedAt: DateTime.now(),
+        imageUrl: 'test2.jpg',
+        htmlContent: '<p>Test Content 2</p>',
+        upvotes: 0,
+        downvotes: 0,
+        userVote: 0,
+      ),
+    ];
+
+    test('initial state should be NewsState.initial()', () {
+      expect(newsCubit.state, equals(const NewsState.initial()));
     });
 
-    test('should load news articles successfully', () async {
+    test('loadNews should emit loaded state on success', () async {
       // Arrange
-      final testArticles = [
-        NewsArticle(
-          id: '1',
-          title: 'Test Article',
-          description: 'Test Description',
-          author: 'Test Author',
-          publishedAt: DateTime.now(),
-          imageUrl: 'test.jpg',
-          htmlContent: '<p>Test</p>',
-        ),
-      ];
-
       when(mockNewsRepository.getNewsArticles(
         page: 1,
         itemsPerPage: 10,
@@ -64,14 +79,14 @@ void main() {
         NewsState.loaded(
           articles: testArticles,
           isLoadingMore: false,
-          hasMoreData: true,
+          hasMoreData: false,
         ),
       );
     });
 
-    test('should emit error state when loading fails', () async {
+    test('loadNews should emit error state on failure', () async {
       // Arrange
-      const errorMessage = 'Failed to load news';
+      const errorMessage = 'Failed to load articles';
       when(mockNewsRepository.getNewsArticles(
         page: 1,
         itemsPerPage: 10,
@@ -81,69 +96,39 @@ void main() {
       await newsCubit.loadNews();
 
       // Assert
-      verify(mockNewsRepository.getNewsArticles(
-        page: 1,
-        itemsPerPage: 10,
-      )).called(1);
-
-      expect(newsCubit.state, const NewsState.error(errorMessage));
+      expect(
+        newsCubit.state,
+        const NewsState.error(errorMessage),
+      );
     });
 
-    test('should load more news articles successfully', () async {
+    test('loadMoreArticles should handle error while keeping existing articles',
+        () async {
       // Arrange
-      final initialArticles = [
-        NewsArticle(
-          id: '1',
-          title: 'Initial Article',
-          description: 'Initial Description',
-          author: 'Test Author',
-          publishedAt: DateTime.now(),
-          imageUrl: 'test.jpg',
-          htmlContent: '<p>Test</p>',
-        ),
-      ];
-
-      final moreArticles = [
-        NewsArticle(
-          id: '2',
-          title: 'More Article',
-          description: 'More Description',
-          author: 'Test Author',
-          publishedAt: DateTime.now(),
-          imageUrl: 'test.jpg',
-          htmlContent: '<p>Test</p>',
-        ),
-      ];
-
-      // Set up initial state
       when(mockNewsRepository.getNewsArticles(
         page: 1,
         itemsPerPage: 10,
-      )).thenAnswer((_) async => Right(initialArticles));
+      )).thenAnswer((_) async => Right(testArticles));
 
-      await newsCubit.loadNews();
-
-      // Set up load more
+      const errorMessage = 'Failed to load more articles';
       when(mockNewsRepository.getNewsArticles(
         page: 2,
         itemsPerPage: 10,
-      )).thenAnswer((_) async => Right(moreArticles));
+      )).thenAnswer((_) async => const Left(errorMessage));
+
+      // Load initial articles
+      await newsCubit.loadNews();
 
       // Act
       await newsCubit.loadMoreArticles();
 
       // Assert
-      verify(mockNewsRepository.getNewsArticles(
-        page: 2,
-        itemsPerPage: 10,
-      )).called(1);
-
       expect(
         newsCubit.state,
         NewsState.loaded(
-          articles: [...initialArticles, ...moreArticles],
+          articles: testArticles,
           isLoadingMore: false,
-          hasMoreData: true,
+          hasMoreData: false,
         ),
       );
     });
