@@ -1,11 +1,10 @@
-// lib/features/news/presentation/widgets/news_content.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/news_cubit.dart';
 import '../bloc/news_state.dart';
 import './news_article_card.dart';
 import '../../../../core/logging/app_logger.dart';
+import '../../../../core/monitoring/sentry_monitoring.dart';
 import '../../domain/entities/news_article.dart';
 
 class NewsContent extends StatefulWidget {
@@ -24,6 +23,11 @@ class _NewsContentState extends State<NewsContent> {
   void initState() {
     super.initState();
     AppLogger.debug('Initializing NewsContent widget');
+    SentryMonitoring.addBreadcrumb(
+      message: 'NewsContent widget initialized',
+      category: 'widget_lifecycle',
+    );
+    
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AppLogger.info('Loading initial news articles');
@@ -34,6 +38,10 @@ class _NewsContentState extends State<NewsContent> {
   @override
   void dispose() {
     AppLogger.debug('Disposing NewsContent widget');
+    SentryMonitoring.addBreadcrumb(
+      message: 'NewsContent widget disposed',
+      category: 'widget_lifecycle',
+    );
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -43,14 +51,30 @@ class _NewsContentState extends State<NewsContent> {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       AppLogger.debug('Loading more articles - reached scroll threshold');
+      SentryMonitoring.addBreadcrumb(
+        message: 'Loading more articles on scroll',
+        category: 'infinite_scroll',
+        data: {
+          'scrollPosition': _scrollController.position.pixels,
+          'maxScrollExtent': _scrollController.position.maxScrollExtent,
+        },
+      );
       context.read<NewsCubit>().loadMoreArticles();
     }
   }
 
   void _toggleSearch() {
+    AppLogger.info('Toggling search state: ${!_isSearching}');
+    SentryMonitoring.addBreadcrumb(
+      message: 'Search toggled',
+      category: 'search',
+      data: {'newSearchState': !_isSearching},
+    );
+    
     setState(() {
       _isSearching = !_isSearching;
       if (!_isSearching) {
+        AppLogger.debug('Clearing search and reloading news');
         _searchController.clear();
         context.read<NewsCubit>().loadNews();
       }
@@ -86,6 +110,12 @@ class _NewsContentState extends State<NewsContent> {
                 ),
               ),
               onChanged: (value) {
+                AppLogger.debug('Search query changed: $value');
+                SentryMonitoring.addBreadcrumb(
+                  message: 'Search query entered',
+                  category: 'search',
+                  data: {'query': value},
+                );
                 context.read<NewsCubit>().searchAllArticles(value);
               },
             )
@@ -105,6 +135,11 @@ class _NewsContentState extends State<NewsContent> {
           ),
           onPressed: _isSearching
               ? () {
+                  AppLogger.debug('Clearing search query');
+                  SentryMonitoring.addBreadcrumb(
+                    message: 'Search cleared',
+                    category: 'search',
+                  );
                   _searchController.clear();
                   context.read<NewsCubit>().searchAllArticles('');
                 }
@@ -138,6 +173,12 @@ class _NewsContentState extends State<NewsContent> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    AppLogger.info('Showing empty state');
+    SentryMonitoring.addBreadcrumb(
+      message: 'Empty state displayed',
+      category: 'ui_state',
+    );
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -161,7 +202,14 @@ class _NewsContentState extends State<NewsContent> {
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () => context.read<NewsCubit>().loadNews(),
+            onPressed: () {
+              AppLogger.info('Refresh button clicked in empty state');
+              SentryMonitoring.addBreadcrumb(
+                message: 'Empty state refresh clicked',
+                category: 'user_action',
+              );
+              context.read<NewsCubit>().loadNews();
+            },
             child: const Text('Refresh'),
           ),
         ],
@@ -171,6 +219,12 @@ class _NewsContentState extends State<NewsContent> {
 
   Widget _buildErrorState(BuildContext context, String message) {
     AppLogger.error('Error loading news: $message');
+    SentryMonitoring.addBreadcrumb(
+      message: 'Error state displayed',
+      category: 'error',
+      data: {'errorMessage': message},
+    );
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -183,6 +237,10 @@ class _NewsContentState extends State<NewsContent> {
           ElevatedButton(
             onPressed: () {
               AppLogger.info('User retrying news load after error');
+              SentryMonitoring.addBreadcrumb(
+                message: 'Error state retry clicked',
+                category: 'user_action',
+              );
               context.read<NewsCubit>().loadNews();
             },
             child: const Text('Retry'),
@@ -199,7 +257,14 @@ class _NewsContentState extends State<NewsContent> {
     bool hasMoreData,
   ) {
     return RefreshIndicator(
-      onRefresh: () => context.read<NewsCubit>().loadNews(),
+      onRefresh: () async {
+        AppLogger.info('Manual refresh triggered');
+        SentryMonitoring.addBreadcrumb(
+          message: 'Manual refresh',
+          category: 'user_action',
+        );
+        return context.read<NewsCubit>().loadNews();
+      },
       child: ListView.builder(
         controller: _scrollController,
         padding: const EdgeInsets.all(16.0),
@@ -219,12 +284,27 @@ class _NewsContentState extends State<NewsContent> {
             article: articles[index],
             onVote: (articleId, voteType) async {
               try {
-                await context.read<NewsCubit>().updateVoteAndRefresh(
+                AppLogger.info('Vote action triggered: $articleId, type: $voteType');
+                SentryMonitoring.addBreadcrumb(
+                  message: 'Article vote',
+                  category: 'user_action',
+                  data: {
+                    'articleId': articleId,
+                    'voteType': voteType.toString(),
+                  },
+                );
+                
+                await context.read<NewsCubit>().updateVoteOnly(
                       articleId: articleId,
                       voteType: voteType,
                     );
-              } catch (error) {
+              } catch (error, stackTrace) {
                 AppLogger.error('Error while voting: $error');
+                await SentryMonitoring.captureException(
+                  error,
+                  stackTrace,
+                  tagValue: 'vote_failure',
+                );
               }
             },
           );

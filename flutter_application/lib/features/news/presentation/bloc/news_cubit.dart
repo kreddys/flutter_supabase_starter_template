@@ -231,4 +231,82 @@ class NewsCubit extends Cubit<NewsState> {
       },
     );
   }
+
+Future<void> updateVoteOnly({
+  required String articleId,
+  required VoteType? voteType,
+}) async {
+  try {
+    // Use pattern matching with maybeWhen or when to handle the state
+    final articles = state.maybeWhen(
+      loaded: (articles, isLoadingMore, hasMoreData) => articles,
+      orElse: () => null,
+    );
+
+    if (articles == null) {
+      return;
+    }
+
+    // Update the vote in the repository
+    final result = await _votingRepository.vote(
+      entityId: articleId,
+      entityType: EntityType.article,
+      voteType: voteType,
+    );
+
+    await result.fold(
+      (error) async {
+        AppLogger.error('Error updating vote: $error');
+        emit(NewsState.error(error));
+      },
+      (success) async {
+        // Get updated vote counts
+        final voteCounts = await _votingRepository.getVoteCounts(
+          entityId: articleId,
+          entityType: EntityType.article,
+        );
+
+        // Update only the specific article's vote counts
+        final updatedArticles = articles.map((article) {
+          if (article.id == articleId) {
+            return article.copyWith(
+              upvotes: voteCounts.fold(
+                (l) => article.upvotes,
+                (r) => r['upvotes'] ?? article.upvotes,
+              ),
+              downvotes: voteCounts.fold(
+                (l) => article.downvotes,
+                (r) => r['downvotes'] ?? article.downvotes,
+              ),
+              userVote: voteType == null ? 0 : (voteType == VoteType.upvote ? 1 : -1),
+            );
+          }
+          return article;
+        }).toList();
+
+        // Get the current loading states using maybeWhen
+        final (currentIsLoadingMore, currentHasMoreData) = state.maybeWhen(
+          loaded: (_, isLoadingMore, hasMoreData) => (isLoadingMore, hasMoreData),
+          orElse: () => (false, false),
+        );
+
+        // Emit new state with updated articles
+        emit(NewsState.loaded(
+          articles: updatedArticles,
+          isLoadingMore: currentIsLoadingMore,
+          hasMoreData: currentHasMoreData,
+        ));
+      },
+    );
+  } catch (error, stackTrace) {
+    AppLogger.error('Error in updateVoteOnly', error: error, stackTrace: stackTrace);
+    await SentryMonitoring.captureException(
+      error,
+      stackTrace,
+      tagValue: 'vote_update_failure',
+    );
+    emit(NewsState.error(error.toString()));
+  }
+}
+
 }
