@@ -1,15 +1,13 @@
+// lib/features/news/presentation/widgets/news_content.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/news_cubit.dart';
 import '../bloc/news_state.dart';
-import 'article_detail_screen.dart';
+import './news_article_card.dart';
+import './news_search_modal.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../../domain/entities/news_article.dart';
-import 'package:flutter_html/flutter_html.dart';
-import 'package:amaravati_chamber/dependency_injection.dart';
-import '../../../../core/widgets/vote_buttons.dart';
-import '../../../../core/voting/domain/repositories/i_voting_repository.dart';
-import 'package:amaravati_chamber/core/logging/app_logger.dart';
-import '../../../../core/monitoring/sentry_monitoring.dart';
 
 class NewsContent extends StatefulWidget {
   const NewsContent({super.key});
@@ -20,10 +18,6 @@ class NewsContent extends StatefulWidget {
 
 class _NewsContentState extends State<NewsContent> {
   final ScrollController _scrollController = ScrollController();
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
-  }
 
   @override
   void initState() {
@@ -51,441 +45,168 @@ class _NewsContentState extends State<NewsContent> {
     }
   }
 
-  void _showSearchModal(BuildContext context) {
-
-    AppLogger.debug('Opening search modal');
-
-    final searchNewsCubit = getIt<NewsCubit>();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-      ),
-      builder: (context) {
-        return BlocProvider(
-          create: (_) => searchNewsCubit,
-          child: Container(
-            height: MediaQuery.of(context).size.height * 0.5,
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
-              ),
-              color: Theme.of(context).scaffoldBackgroundColor,
-            ),
-            child: Column(
-              children: [
-                Container(
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                  height: 4,
-                  width: 40,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).dividerColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Search articles...',
-                      prefixIcon: Icon(
-                        Icons.search,
-                        color: Theme.of(context).iconTheme.color,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: Theme.of(context).dividerColor,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: Theme.of(context).dividerColor,
-                        ),
-                      ),
-                    ),
-                    onChanged: (value) {
-                      AppLogger.debug('Search query changed: $value');
-                      searchNewsCubit.searchAllArticles(value);
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: BlocBuilder<NewsCubit, NewsState>(
-                    builder: (context, state) {
-                      return state.when(
-                        initial: () => const SizedBox(),
-                        loading: () => const Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                        loaded: (articles, isLoadingMore, hasMoreData) {
-                          if (articles.isEmpty) {
-                            return Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.search,
-                                    size: 48,
-                                    color: Theme.of(context).colorScheme.secondary,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'No articles found',
-                                    style: Theme.of(context).textTheme.titleLarge,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Try different search terms',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-                          return ListView(
-                            padding: const EdgeInsets.all(16.0),
-                            children: articles
-                                .map((article) => _buildSearchResultItem(context, article))
-                                .toList(),
-                          );
-                        },
-                        error: (message) => Center(
-                          child: Text(
-                            'Error: $message',
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSearchResultItem(BuildContext context, NewsArticle article) {
-    if (article.title.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return ListTile(
-      onTap: () {
-        Navigator.pop(context);
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ArticleDetailScreen(article: article),
-          ),
-        );
-      },
-      leading: article.imageUrl.isNotEmpty
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: Image.network(
-                article.imageUrl,
-                width: 50,
-                height: 50,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  AppLogger.warning('Failed to load article image: ${article.imageUrl}');
-                  SentryMonitoring.captureException(
-                    error,
-                    stackTrace,
-                  );
-                  return Container(
-                    height: 200,
-                    color: Theme.of(context).colorScheme.surfaceVariant,
-                    child: Center(
-                      child: Icon(
-                        Icons.error,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            )
-          : null,
-      title: Text(
-        article.title,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.titleSmall,
-      ),
-      subtitle: article.author.isNotEmpty || article.publishedAt != null
-          ? Text(
-              [
-                if (article.author.isNotEmpty) 'By ${article.author}',
-                if (article.publishedAt != null) _formatDate(article.publishedAt),
-              ].join(' • '),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
-              ),
-            )
-          : null,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Amaravati News',
-          style: Theme.of(context).textTheme.titleMedium,
+      appBar: _buildAppBar(context),
+      body: _buildBody(context),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    return AppBar(
+      title: Text(
+        'News',
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      actions: [
+        IconButton(
+          icon: Icon(
+            Icons.search,
+            color: Theme.of(context).iconTheme.color,
+          ),
+          onPressed: () => _showSearchModal(context),
         ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        scrolledUnderElevation: 0,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.search,
-              color: Theme.of(context).iconTheme.color,
+      ],
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    return BlocBuilder<NewsCubit, NewsState>(
+      builder: (context, state) {
+        return state.when(
+          initial: () => const SizedBox(),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          loaded: (articles, isLoadingMore, hasMoreData) {
+            if (articles.isEmpty) {
+              return _buildEmptyState(context);
+            }
+            return _buildNewsList(
+              context, 
+              articles, 
+              isLoadingMore, 
+              hasMoreData
+            );
+          },
+          error: (message) => _buildErrorState(context, message),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.article,
+            size: 48,
+            color: Theme.of(context).colorScheme.secondary,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No articles available',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Check back later for new articles',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
             ),
-            onPressed: () => _showSearchModal(context),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => context.read<NewsCubit>().loadNews(),
+            child: const Text('Refresh'),
           ),
         ],
       ),
-      body: BlocBuilder<NewsCubit, NewsState>(
-        builder: (context, state) {
-          return state.when(
-            initial: () => const SizedBox(),
-            loading: () => const Center(
-              child: CircularProgressIndicator(),
-            ),
-            loaded: (articles, isLoadingMore, hasMoreData) {
-              if (articles.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.article,
-                        size: 48,
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No articles available',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Check back later for new articles',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => context.read<NewsCubit>().loadNews(),
-                        child: const Text('Refresh'),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              return RefreshIndicator(
-                onRefresh: () async {
-                  await context.read<NewsCubit>().loadNews();
-                },
-                child: ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(16.0),
-                  itemCount: articles.length + (hasMoreData ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index == articles.length) {
-                      return isLoadingMore
-                          ? const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: CircularProgressIndicator(),
-                              ),
-                            )
-                          : const SizedBox();
-                    }
-                    return _buildArticleCard(context, articles[index]);
-                  },
-                ),
-              );
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, String message) {
+    AppLogger.error('Error loading news: $message');
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Error: $message',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              AppLogger.info('User retrying news load after error');
+              context.read<NewsCubit>().loadNews();
             },
-            error: (message) {
-              AppLogger.error('Error loading news: $message');
-              SentryMonitoring.captureException(
-                Exception('News loading error: $message'),
-                StackTrace.current,
-              );
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Error: $message',
-                      style: Theme.of(context).textTheme.bodyLarge,
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNewsList(
+    BuildContext context, 
+    List<NewsArticle> articles, 
+    bool isLoadingMore, 
+    bool hasMoreData
+  ) {
+    return RefreshIndicator(
+      onRefresh: () => context.read<NewsCubit>().loadNews(),
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: const EdgeInsets.all(16.0),
+        itemCount: articles.length + (hasMoreData ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == articles.length) {
+            return isLoadingMore
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: CircularProgressIndicator(),
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        AppLogger.info('User retrying news load after error');
-                        context.read<NewsCubit>().loadNews();
-                      },
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              );
+                  )
+                : const SizedBox();
+          }
+          return NewsArticleCard(
+            article: articles[index],
+            onVote: (articleId, voteType) async {
+              try {
+                await context.read<NewsCubit>().updateVoteAndRefresh(
+                  articleId: articleId,
+                  voteType: voteType,
+                );
+              } catch (error) {
+                AppLogger.error('Error while voting: $error');
+              }
             },
           );
         },
       ),
     );
   }
-Widget _buildArticleCard(BuildContext context, NewsArticle article) {
-  return Card(
-    elevation: 0,
-    margin: const EdgeInsets.only(bottom: 16.0),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-      side: BorderSide(
-        color: Theme.of(context).dividerColor,
-      ),
-    ),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: () {
-        AppLogger.info('User opened article: ${article.id}');
-        SentryMonitoring.addBreadcrumb(
-          message: 'Article opened',
-          category: 'user_action',
-          data: {'article_id': article.id},
-        );
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ArticleDetailScreen(article: article),
-          ),
-        );
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (article.imageUrl.isNotEmpty)
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
-              ),
-              child: Image.network(
-                article.imageUrl,
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  AppLogger.warning('Failed to load article image: ${article.imageUrl}');
-                  SentryMonitoring.captureException(
-                    error,
-                    stackTrace,
-                  );
-                  return Container(
-                    height: 200,
-                    color: Theme.of(context).colorScheme.surfaceVariant,
-                    child: Center(
-                      child: Icon(
-                        Icons.error,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Html(
-                  data: article.title,
-                  style: {
-                    "body": Style(
-                      fontSize: FontSize(17),
-                      margin: Margins.zero,
-                      padding: HtmlPaddings.zero,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).textTheme.titleLarge?.color,
-                    ),
-                  },
-                ),
-                const SizedBox(height: 4),
-                Html(
-                  data: article.description,
-                  style: {
-                    "body": Style(
-                      fontSize: FontSize(15),
-                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                      margin: Margins.zero,
-                      padding: HtmlPaddings.zero,
-                      maxLines: 3,
-                      textOverflow: TextOverflow.ellipsis,
-                    ),
-                  },
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${article.author} • ${_formatDate(article.publishedAt)}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.color
-                                ?.withOpacity(0.7),
-                          ),
-                    ),
-                    VoteButtons(
-                      entityId: article.id,
-                      userVote: article.userVote,
-                      upvotes: article.upvotes,
-                      downvotes: article.downvotes,
-                      onVote: (VoteType? voteType) async {
-                        AppLogger.info('User voted on article ${article.id}: ${voteType.toString()}');
-                        try {
-                          await context.read<NewsCubit>().updateVoteAndRefresh(
-                            articleId: article.id, 
-                            voteType: voteType,
-                          );
-                        } catch (error, stackTrace) {
-                          AppLogger.error('Error while voting: $error');
-                          SentryMonitoring.captureException(
-                            error,
-                            stackTrace,
-                          );
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+
+void _showSearchModal(BuildContext context) {
+  AppLogger.debug('Opening search modal');
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (modalContext) => BlocProvider.value(
+      // Pass the existing NewsCubit instance from the parent context
+      value: context.read<NewsCubit>(),
+      child: NewsSearchModal(
+        searchNewsCubit: context.read<NewsCubit>(),
       ),
     ),
   );
 }
-
 }
