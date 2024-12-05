@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sentry/sentry.dart';
 import '../../domain/repositories/i_voting_repository.dart';
 import '../../../../core/monitoring/sentry_monitoring.dart';
+import '../../../logging/app_logger.dart';
 
 @LazySingleton(as: IVotingRepository)
 class VotingRepository implements IVotingRepository {
@@ -24,8 +25,12 @@ class VotingRepository implements IVotingRepository {
     );
 
     try {
+
+      AppLogger.info('Attempting to vote');
+      
       final userId = _supabaseClient.auth.currentUser?.id;
       if (userId == null) {
+        AppLogger.warning('Vote attempt failed - User not logged in');
         transaction.finish(status: const SpanStatus.unauthenticated());
         return const Left('User must be logged in to vote');
       }
@@ -55,6 +60,7 @@ class VotingRepository implements IVotingRepository {
               .eq('user_id', userId);
         }
       } else if (voteType != null) {
+        AppLogger.info('Creating new vote');
         await _supabaseClient.from('votes').insert({
           'entity_id': entityId,
           'entity_type': entityType.name,
@@ -63,9 +69,15 @@ class VotingRepository implements IVotingRepository {
         });
       }
 
+      AppLogger.info('Vote operation completed successfully');
       transaction.finish(status: const SpanStatus.ok());
       return const Right(true);
     } catch (error, stackTrace) {
+          AppLogger.error(
+            'Vote operation failed',
+            error: error,
+            stackTrace: stackTrace,
+          );
       transaction.finish(status: const SpanStatus.internalError());
       await SentryMonitoring.captureException(
         error,
@@ -100,6 +112,13 @@ class VotingRepository implements IVotingRepository {
       transaction.finish(status: const SpanStatus.ok());
       return Right({'upvotes': upvotes, 'downvotes': downvotes});
     } catch (error, stackTrace) {
+
+      AppLogger.error(
+        'Failed to fetch vote counts',
+        error: error,
+        stackTrace: stackTrace,
+      );
+
       transaction.finish(status: const SpanStatus.internalError());
       await SentryMonitoring.captureException(
         error,
@@ -147,7 +166,15 @@ class VotingRepository implements IVotingRepository {
         response['vote_type'] == 'upvote' ? VoteType.upvote : VoteType.downvote,
       );
     } catch (error, stackTrace) {
+
+      AppLogger.error(
+        'Failed to fetch user vote',
+        error: error,
+        stackTrace: stackTrace,
+      );
+
       transaction.finish(status: const SpanStatus.internalError());
+      
       await SentryMonitoring.captureException(
         error,
         stackTrace,
