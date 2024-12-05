@@ -5,8 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/news_cubit.dart';
 import '../bloc/news_state.dart';
 import '../../domain/entities/news_article.dart';
-import './news_article_card.dart';
 import '../../../../core/logging/app_logger.dart';
+import './news_search_article_card.dart';
 
 class NewsSearchModal extends StatelessWidget {
   final NewsCubit searchNewsCubit;
@@ -100,7 +100,7 @@ class NewsSearchModal extends StatelessWidget {
     return ListView.builder(
       padding: const EdgeInsets.all(16.0),
       itemCount: articles.length,
-      itemBuilder: (context, index) => NewsArticleCard(
+      itemBuilder: (context, index) => NewsSearchArticleCard(
         article: articles[index],
         onVote: (articleId, voteType) async {
           await searchNewsCubit.updateVoteAndRefresh(
