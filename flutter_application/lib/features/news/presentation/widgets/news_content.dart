@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/news_cubit.dart';
 import '../bloc/news_state.dart';
 import './news_article_card.dart';
-import './news_search_modal.dart';
 import '../../../../core/logging/app_logger.dart';
 import '../../domain/entities/news_article.dart';
 
@@ -18,6 +17,8 @@ class NewsContent extends StatefulWidget {
 
 class _NewsContentState extends State<NewsContent> {
   final ScrollController _scrollController = ScrollController();
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -34,6 +35,7 @@ class _NewsContentState extends State<NewsContent> {
   void dispose() {
     AppLogger.debug('Disposing NewsContent widget');
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -43,6 +45,16 @@ class _NewsContentState extends State<NewsContent> {
       AppLogger.debug('Loading more articles - reached scroll threshold');
       context.read<NewsCubit>().loadMoreArticles();
     }
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+      if (!_isSearching) {
+        _searchController.clear();
+        context.read<NewsCubit>().loadNews();
+      }
+    });
   }
 
   @override
@@ -55,10 +67,32 @@ class _NewsContentState extends State<NewsContent> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
-      title: Text(
-        'News',
-        style: Theme.of(context).textTheme.titleMedium,
-      ),
+      leading: _isSearching
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: _toggleSearch,
+            )
+          : null,
+      title: _isSearching
+          ? TextField(
+              controller: _searchController,
+              autofocus: true,
+              style: Theme.of(context).textTheme.bodyLarge,
+              decoration: InputDecoration(
+                hintText: 'Search articles...',
+                border: InputBorder.none,
+                hintStyle: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                ),
+              ),
+              onChanged: (value) {
+                context.read<NewsCubit>().searchAllArticles(value);
+              },
+            )
+          : Text(
+              'News',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       scrolledUnderElevation: 0,
       surfaceTintColor: Colors.transparent,
@@ -66,10 +100,15 @@ class _NewsContentState extends State<NewsContent> {
       actions: [
         IconButton(
           icon: Icon(
-            Icons.search,
+            _isSearching ? Icons.clear : Icons.search,
             color: Theme.of(context).iconTheme.color,
           ),
-          onPressed: () => _showSearchModal(context),
+          onPressed: _isSearching
+              ? () {
+                  _searchController.clear();
+                  context.read<NewsCubit>().searchAllArticles('');
+                }
+              : _toggleSearch,
         ),
       ],
     );
@@ -86,10 +125,10 @@ class _NewsContentState extends State<NewsContent> {
               return _buildEmptyState(context);
             }
             return _buildNewsList(
-              context, 
-              articles, 
-              isLoadingMore, 
-              hasMoreData
+              context,
+              articles,
+              isLoadingMore,
+              hasMoreData,
             );
           },
           error: (message) => _buildErrorState(context, message),
@@ -117,8 +156,8 @@ class _NewsContentState extends State<NewsContent> {
           Text(
             'Check back later for new articles',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-            ),
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                ),
           ),
           const SizedBox(height: 16),
           ElevatedButton(
@@ -154,10 +193,10 @@ class _NewsContentState extends State<NewsContent> {
   }
 
   Widget _buildNewsList(
-    BuildContext context, 
-    List<NewsArticle> articles, 
-    bool isLoadingMore, 
-    bool hasMoreData
+    BuildContext context,
+    List<NewsArticle> articles,
+    bool isLoadingMore,
+    bool hasMoreData,
   ) {
     return RefreshIndicator(
       onRefresh: () => context.read<NewsCubit>().loadNews(),
@@ -181,9 +220,9 @@ class _NewsContentState extends State<NewsContent> {
             onVote: (articleId, voteType) async {
               try {
                 await context.read<NewsCubit>().updateVoteAndRefresh(
-                  articleId: articleId,
-                  voteType: voteType,
-                );
+                      articleId: articleId,
+                      voteType: voteType,
+                    );
               } catch (error) {
                 AppLogger.error('Error while voting: $error');
               }
@@ -193,20 +232,4 @@ class _NewsContentState extends State<NewsContent> {
       ),
     );
   }
-
-void _showSearchModal(BuildContext context) {
-  AppLogger.debug('Opening search modal');
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (modalContext) => BlocProvider.value(
-      // Pass the existing NewsCubit instance from the parent context
-      value: context.read<NewsCubit>(),
-      child: NewsSearchModal(
-        searchNewsCubit: context.read<NewsCubit>(),
-      ),
-    ),
-  );
-}
 }
