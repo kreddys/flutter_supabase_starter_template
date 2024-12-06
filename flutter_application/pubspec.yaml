@@ -43,6 +43,7 @@ dev_dependencies:
   freezed: ^2.5.7
   build_runner: ^2.4.8
   mockito: ^5.4.4
+  bloc_test: ^9.1.7
   injectable_generator:
 
 flutter:
