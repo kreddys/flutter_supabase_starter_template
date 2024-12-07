@@ -143,3 +143,53 @@ using (is_admin());
 create policy "Anyone can view businesses"
 on businesses for select
 using (true);
+
+-- Core tables
+create table public.articles (
+    id uuid primary key,
+    ghost_id text,
+    title text not null,
+    slug text,
+    description text,
+    html_content text,
+    image_url text,
+    published_at timestamptz,
+    created_at timestamptz default now(),
+    updated_at timestamptz default now()
+);
+
+create table public.article_tags (
+    id uuid primary key,
+    ghost_id text,
+    name text not null,
+    slug text not null,
+    description text,
+    created_at timestamptz default now(),
+    updated_at timestamptz default now()
+);
+
+create table public.article_authors (
+    id uuid primary key,
+    ghost_id text,
+    name text not null,
+    slug text not null,
+    email text,
+    profile_image text,
+    created_at timestamptz default now(),
+    updated_at timestamptz default now()
+);
+
+-- Relationship tables
+create table public.article_tag_mappings (
+    article_id uuid references articles(id) on delete cascade,
+    tag_id uuid references article_tags(id) on delete cascade,
+    created_at timestamptz default now(),
+    primary key (article_id, tag_id)
+);
+
+create table public.article_author_mappings (
+    article_id uuid references articles(id) on delete cascade,
+    author_id uuid references article_authors(id) on delete cascade,
+    created_at timestamptz default now(),
+    primary key (article_id, author_id)
+);
