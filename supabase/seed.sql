@@ -50,18 +50,6 @@ create table user_roles (
 -- Add RLS policies
 alter table user_roles enable row level security;
 
--- Only admins can manage roles
-create policy "Admins can manage roles"
-    on user_roles for all
-    using (
-        exists (
-            select 1 
-            from user_roles 
-            where user_id = auth.uid() 
-            and role = 'admin'
-        )
-    );
-
 -- Users can view their own roles
 create policy "Users can view their own roles"
     on user_roles for select
@@ -115,18 +103,6 @@ create policy "Business owners can manage their own listings"
     on businesses for all
     using (auth.uid() = owner_id);
 
--- Policy for admins to manage all businesses
-create policy "Admins can manage all businesses"
-    on businesses for all
-    using (
-        exists (
-            select 1 
-            from user_roles 
-            where user_id = auth.uid() 
-            and role = 'admin'
-        )
-    );
-
 -- Create updated_at trigger
 create trigger update_businesses_updated_at
     before update on businesses
@@ -137,3 +113,33 @@ create trigger update_businesses_updated_at
 create index businesses_category_idx on businesses(category);
 create index businesses_status_idx on businesses(status);
 create index businesses_owner_id_idx on businesses(owner_id);
+
+-- Create a base admin role check function
+create or replace function is_admin()
+returns boolean as $$
+begin
+  return exists (
+    select 1 
+    from user_roles 
+    where user_id = auth.uid() 
+    and role = 'admin'
+  );
+end;
+$$ language plpgsql security definer;
+
+-- Now create new policies using the function
+create policy "Admins can manage all businesses"
+on businesses for all
+using (
+  is_admin()
+  or auth.uid() = owner_id -- Allow business owners to manage their own
+);
+
+create policy "Admins can manage roles"
+on user_roles for all
+using (is_admin());
+
+-- Add a public read policy for businesses if needed
+create policy "Anyone can view businesses"
+on businesses for select
+using (true);

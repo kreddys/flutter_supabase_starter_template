@@ -1,4 +1,6 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/logging/app_logger.dart';
+import '../../../../core/monitoring/sentry_monitoring.dart';
 
 enum BusinessListingsStatus { initial, loading, success, failure }
 
@@ -48,6 +50,16 @@ class BusinessListingsState extends Equatable {
   }
 }
 
+class Point {
+  final double x;
+  final double y;
+
+  Point(this.x, this.y);
+
+  @override
+  String toString() => '($x,$y)';
+}
+
 class Business {
   final String id;
   final String name;
@@ -61,7 +73,7 @@ class Business {
   final bool isVerified;
   final bool isMember;
   final List<String> images;
-  final Map<String, dynamic> location; // For storing latitude and longitude
+  final Point? location;
   final String operatingHours;
   final bool isOpen;
 
@@ -78,12 +90,38 @@ class Business {
     this.isVerified = false,
     this.isMember = false,
     this.images = const [],
-    this.location = const {},
+    this.location,
     this.operatingHours = '',
     this.isOpen = false,
   });
 
   factory Business.fromJson(Map<String, dynamic> json) {
+    Point? locationPoint;
+    if (json['location'] != null) {
+      try {
+        final String pointStr = json['location'] as String;
+        final coords = pointStr
+            .replaceAll('(', '')
+            .replaceAll(')', '')
+            .split(',')
+            .map((e) => double.parse(e.trim()))
+            .toList();
+        locationPoint = Point(coords[0], coords[1]);
+      } catch (e, stackTrace) {
+        // Replace print with proper logging and Sentry capture
+        AppLogger.error(
+          'Error parsing location point',
+          error: e,
+          stackTrace: StackTrace.current,
+        );
+        SentryMonitoring.captureException(
+          e,
+          stackTrace,
+          tagValue: 'location_parse_failure',
+        );
+      }
+    }
+
     return Business(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -97,7 +135,7 @@ class Business {
       isVerified: json['is_verified'] as bool? ?? false,
       isMember: json['is_member'] as bool? ?? false,
       images: List<String>.from(json['images'] as List? ?? []),
-      location: json['location'] as Map<String, dynamic>? ?? {},
+      location: locationPoint,
       operatingHours: json['operating_hours'] as String? ?? '',
       isOpen: json['is_open'] as bool? ?? false,
     );
@@ -116,10 +154,13 @@ class Business {
       'is_verified': isVerified,
       'is_member': isMember,
       'images': images,
-      'location': location,
+      'location': location != null ? '(${location!.x},${location!.y})' : null,
       'operating_hours': operatingHours,
       'is_open': isOpen,
     };
   }
 
+  // Helper getters for coordinates
+  double? get latitude => location?.y;
+  double? get longitude => location?.x;
 }
