@@ -144,52 +144,96 @@ create policy "Anyone can view businesses"
 on businesses for select
 using (true);
 
--- Core tables
-create table public.articles (
-    id uuid primary key,
-    ghost_id text,
-    title text not null,
-    slug text,
-    description text,
-    html_content text,
-    image_url text,
-    published_at timestamptz,
-    created_at timestamptz default now(),
-    updated_at timestamptz default now()
+-- Create a function to automatically update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Articles table
+CREATE TABLE IF NOT EXISTS articles (
+    id UUID PRIMARY KEY,
+    ghost_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    html_content TEXT NOT NULL,
+    published_at TIMESTAMP WITH TIME ZONE,
+    image_url TEXT,
+    slug TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-create table public.article_tags (
-    id uuid primary key,
-    ghost_id text,
-    name text not null,
-    slug text not null,
-    description text,
-    created_at timestamptz default now(),
-    updated_at timestamptz default now()
+-- Article tags table with foreign key to articles
+CREATE TABLE IF NOT EXISTS article_tags (
+    id UUID PRIMARY KEY,
+    article_id UUID REFERENCES articles(id),
+    ghost_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-create table public.article_authors (
-    id uuid primary key,
-    ghost_id text,
-    name text not null,
-    slug text not null,
-    email text,
-    profile_image text,
-    created_at timestamptz default now(),
-    updated_at timestamptz default now()
+-- Article authors table with foreign key to articles
+CREATE TABLE IF NOT EXISTS article_authors (
+    id UUID PRIMARY KEY,
+    article_id UUID REFERENCES articles(id),
+    ghost_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL,
+    email TEXT,
+    profile_image TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Relationship tables
-create table public.article_tag_mappings (
-    article_id uuid references articles(id) on delete cascade,
-    tag_id uuid references article_tags(id) on delete cascade,
-    created_at timestamptz default now(),
-    primary key (article_id, tag_id)
-);
+-- Create triggers for updating the updated_at timestamp
+CREATE TRIGGER update_articles_updated_at
+    BEFORE UPDATE ON articles
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
-create table public.article_author_mappings (
-    article_id uuid references articles(id) on delete cascade,
-    author_id uuid references article_authors(id) on delete cascade,
-    created_at timestamptz default now(),
-    primary key (article_id, author_id)
-);
+CREATE TRIGGER update_article_tags_updated_at
+    BEFORE UPDATE ON article_tags
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_article_authors_updated_at
+    BEFORE UPDATE ON article_authors
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE article_tags ENABLE ROW LEVEL SECURITY;
+ALTER TABLE article_authors ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for public read access
+CREATE POLICY "Public read access for articles"
+    ON articles
+    FOR SELECT
+    TO public
+    USING (true);
+
+CREATE POLICY "Public read access for article_tags"
+    ON article_tags
+    FOR SELECT
+    TO public
+    USING (true);
+
+CREATE POLICY "Public read access for article_authors"
+    ON article_authors
+    FOR SELECT
+    TO public
+    USING (true);
+
+-- Create indexes for better query performance
+CREATE INDEX IF NOT EXISTS idx_articles_ghost_id ON articles(ghost_id);
+CREATE INDEX IF NOT EXISTS idx_articles_slug ON articles(slug);
+CREATE INDEX IF NOT EXISTS idx_article_tags_article_id ON article_tags(article_id);
+CREATE INDEX IF NOT EXISTS idx_article_authors_article_id ON article_authors(article_id);

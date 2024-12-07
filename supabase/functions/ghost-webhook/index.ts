@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 
-// Interfaces remain the same
+// Interfaces for Ghost webhook payload
 interface GhostAuthor {
   id: string;
   name: string;
@@ -35,7 +35,7 @@ interface GhostWebhookPayload {
   };
 }
 
-// Logger class remains the same
+// Logger class for consistent logging
 class AppLogger {
   static debug(message: string, data?: any) {
     console.log(`[DEBUG] ${new Date().toISOString()} - ${message}`, data ? JSON.stringify(data, null, 2) : '');
@@ -58,7 +58,7 @@ serve(async (req) => {
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
   if (!supabaseUrl || !supabaseKey) {
-    AppLogger.error(`Environment variables missing`, { requestId, supabaseUrl: !!supabaseUrl, supabaseKey: !!supabaseKey });
+    AppLogger.error(`Environment variables missing`, { requestId });
     throw new Error('Missing required environment variables');
   }
 
@@ -77,7 +77,36 @@ serve(async (req) => {
 
     const post = payload.post.current;
     const articleId = crypto.randomUUID();
-    AppLogger.debug(`Generated article ID`, { requestId, articleId });
+
+    // Insert Article first
+    AppLogger.info(`Inserting article`, { requestId, articleId, title: post.title });
+    const articleResponse = await fetch(`${supabaseUrl}/rest/v1/articles`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        id: articleId,
+        ghost_id: post.id,
+        title: post.title,
+        description: post.custom_excerpt || post.plaintext?.substring(0, 200) || '',
+        html_content: post.html,
+        published_at: post.published_at,
+        image_url: post.feature_image,
+        slug: post.slug,
+        created_at: post.created_at,
+        updated_at: post.updated_at
+      })
+    });
+
+    if (!articleResponse.ok) {
+      const errorText = await articleResponse.text();
+      AppLogger.error(`Failed to insert article`, { requestId, error: errorText });
+      throw new Error(`Failed to insert article: ${errorText}`);
+    }
 
     // Process Authors
     AppLogger.info(`Processing authors`, { requestId, authorCount: post.authors.length });
@@ -91,10 +120,11 @@ serve(async (req) => {
             'Content-Type': 'application/json',
             'apikey': supabaseKey,
             'Authorization': `Bearer ${supabaseKey}`,
-            'Prefer': 'return=representation, resolution=merge-duplicates'
+            'Prefer': 'return=representation'
           },
           body: JSON.stringify({
-            id: crypto.randomUUID(), // Added UUID generation
+            id: crypto.randomUUID(),
+            article_id: articleId,
             ghost_id: author.id,
             name: author.name,
             slug: author.slug,
@@ -105,55 +135,17 @@ serve(async (req) => {
           })
         });
 
-        const responseText = await authorResponse.text();
-        let authorData;
-        
-        try {
-          authorData = responseText ? JSON.parse(responseText) : null;
-        } catch (parseError) {
-          AppLogger.error(`Failed to parse author response`, {
-            requestId,
-            authorId: author.id,
-            responseText,
-            status: authorResponse.status
-          });
-          throw new Error(`Invalid response from author creation: ${responseText}`);
+        if (!authorResponse.ok) {
+          const errorText = await authorResponse.text();
+          throw new Error(`Failed to insert author: ${errorText}`);
         }
 
-        if (!authorResponse.ok || !authorData) {
-          throw new Error(`Failed to insert author: ${responseText}`);
-        }
-
-        AppLogger.debug(`Author inserted`, { requestId, authorId: authorData.id });
-
-        // Create author mapping
-        const mappingResponse = await fetch(`${supabaseUrl}/rest/v1/article_author_mappings`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Prefer': 'return=representation, resolution=merge-duplicates'
-          },
-          body: JSON.stringify({
-            id: crypto.randomUUID(), // Added UUID generation
-            article_id: articleId,
-            author_id: authorData.id
-          })
-        });
-
-        if (!mappingResponse.ok) {
-          throw new Error(`Failed to create author mapping: ${await mappingResponse.text()}`);
-        }
-
-        AppLogger.debug(`Author mapping created`, { requestId, articleId, authorId: authorData.id });
-        return authorData;
+        AppLogger.debug(`Author inserted successfully`, { requestId, authorId: author.id });
       } catch (error) {
         AppLogger.error(`Error processing author`, { 
           requestId, 
           authorId: author.id, 
-          error: error.message,
-          stack: error.stack 
+          error: error.message 
         });
         throw error;
       }
@@ -171,10 +163,11 @@ serve(async (req) => {
             'Content-Type': 'application/json',
             'apikey': supabaseKey,
             'Authorization': `Bearer ${supabaseKey}`,
-            'Prefer': 'return=representation, resolution=merge-duplicates'
+            'Prefer': 'return=representation'
           },
           body: JSON.stringify({
-            id: crypto.randomUUID(), // Added UUID generation
+            id: crypto.randomUUID(),
+            article_id: articleId,
             ghost_id: tag.id,
             name: tag.name,
             slug: tag.slug,
@@ -184,89 +177,21 @@ serve(async (req) => {
           })
         });
 
-        const responseText = await tagResponse.text();
-        let tagData;
-        
-        try {
-          tagData = responseText ? JSON.parse(responseText) : null;
-        } catch (parseError) {
-          AppLogger.error(`Failed to parse tag response`, {
-            requestId,
-            tagId: tag.id,
-            responseText,
-            status: tagResponse.status
-          });
-          throw new Error(`Invalid response from tag creation: ${responseText}`);
+        if (!tagResponse.ok) {
+          const errorText = await tagResponse.text();
+          throw new Error(`Failed to insert tag: ${errorText}`);
         }
 
-        if (!tagResponse.ok || !tagData) {
-          throw new Error(`Failed to insert tag: ${responseText}`);
-        }
-
-        AppLogger.debug(`Tag inserted`, { requestId, tagId: tagData.id });
-
-        // Create tag mapping
-        const mappingResponse = await fetch(`${supabaseUrl}/rest/v1/article_tag_mappings`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Prefer': 'return=representation, resolution=merge-duplicates'
-          },
-          body: JSON.stringify({
-            id: crypto.randomUUID(), // Added UUID generation
-            article_id: articleId,
-            tag_id: tagData.id
-          })
-        });
-
-        if (!mappingResponse.ok) {
-          throw new Error(`Failed to create tag mapping: ${await mappingResponse.text()}`);
-        }
-
-        AppLogger.debug(`Tag mapping created`, { requestId, articleId, tagId: tagData.id });
-        return tagData;
+        AppLogger.debug(`Tag inserted successfully`, { requestId, tagId: tag.id });
       } catch (error) {
         AppLogger.error(`Error processing tag`, { 
           requestId, 
           tagId: tag.id, 
-          error: error.message,
-          stack: error.stack 
+          error: error.message 
         });
         throw error;
       }
     });
-
-    // Insert Article (remains mostly the same)
-    AppLogger.info(`Inserting article`, { requestId, articleId, title: post.title });
-    const articleResponse = await fetch(`${supabaseUrl}/rest/v1/articles`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`,
-        'Prefer': 'return=representation, resolution=merge-duplicates'
-      },
-      body: JSON.stringify({
-        id: articleId,
-        ghost_id: post.id,
-        title: post.title,
-        description: post.custom_excerpt || post.plaintext?.substring(0, 200) || '',
-        html_content: post.html,
-        published_at: post.published_at,
-        image_url: post.feature_image,
-        slug: post.slug,
-        created_at: post.created_at,
-        updated_at: post.updated_at
-      })
-    });
-
-    if (!articleResponse.ok) {
-      throw new Error(`Failed to insert article: ${await articleResponse.text()}`);
-    }
-
-    AppLogger.debug(`Article inserted`, { requestId, articleId });
 
     // Wait for all promises to resolve
     await Promise.all([...authorPromises, ...tagPromises]);
