@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/logging/app_logger.dart';
+import '../../../../core/monitoring/sentry_monitoring.dart';
 import 'business_listings_state.dart';
 
 class BusinessListingsCubit extends Cubit<BusinessListingsState> {
@@ -9,6 +11,7 @@ class BusinessListingsCubit extends Cubit<BusinessListingsState> {
 
   Future<void> loadBusinessListings() async {
     try {
+      AppLogger.info('Loading business listings');
       emit(state.copyWith(status: BusinessListingsStatus.loading));
       
       final response = await _supabaseClient
@@ -20,12 +23,25 @@ class BusinessListingsCubit extends Cubit<BusinessListingsState> {
           .map((business) => Business.fromJson(business))
           .toList();
 
+      AppLogger.info('Successfully loaded ${businesses.length} businesses');
+      await SentryMonitoring.addBreadcrumb(
+        message: 'Businesses loaded successfully',
+        data: {'count': businesses.length},
+      );
+
       emit(state.copyWith(
         status: BusinessListingsStatus.success,
         businesses: businesses,
         filteredBusinesses: businesses,
       ));
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Failed to load business listings',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      await SentryMonitoring.captureException(e, stackTrace);
+      
       emit(
         state.copyWith(
           status: BusinessListingsStatus.failure,
@@ -35,7 +51,112 @@ class BusinessListingsCubit extends Cubit<BusinessListingsState> {
     }
   }
 
+  Future<void> createBusiness(Business business) async {
+    try {
+      AppLogger.info('Creating new business', error: business.name);
+      await SentryMonitoring.addBreadcrumb(
+        message: 'Creating new business',
+        data: {'businessName': business.name},
+      );
+      
+      emit(state.copyWith(status: BusinessListingsStatus.loading));
+      
+      await _supabaseClient
+          .from('businesses')
+          .insert(business.toJson());
+
+      await loadBusinessListings();
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Failed to create business',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      await SentryMonitoring.captureException(
+        e, 
+        stackTrace,
+        tagValue: 'create_business_error',
+      );
+      
+      emit(state.copyWith(
+        status: BusinessListingsStatus.failure,
+        errorMessage: 'Failed to create business: ${e.toString()}',
+      ));
+    }
+  }
+
+  Future<void> updateBusiness(Business business) async {
+    try {
+      AppLogger.info('Updating business', error: business.id);
+      await SentryMonitoring.addBreadcrumb(
+        message: 'Updating business',
+        data: {'businessId': business.id},
+      );
+      
+      emit(state.copyWith(status: BusinessListingsStatus.loading));
+      
+      await _supabaseClient
+          .from('businesses')
+          .update(business.toJson())
+          .eq('id', business.id);
+
+      await loadBusinessListings();
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Failed to update business',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      await SentryMonitoring.captureException(
+        e, 
+        stackTrace,
+        tagValue: 'update_business_error',
+      );
+      
+      emit(state.copyWith(
+        status: BusinessListingsStatus.failure,
+        errorMessage: 'Failed to update business: ${e.toString()}',
+      ));
+    }
+  }
+
+  Future<void> deleteBusiness(String businessId) async {
+    try {
+      AppLogger.info('Deleting business', error: businessId);
+      await SentryMonitoring.addBreadcrumb(
+        message: 'Deleting business',
+        data: {'businessId': businessId},
+      );
+      
+      emit(state.copyWith(status: BusinessListingsStatus.loading));
+      
+      await _supabaseClient
+          .from('businesses')
+          .delete()
+          .eq('id', businessId);
+
+      await loadBusinessListings();
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Failed to delete business',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      await SentryMonitoring.captureException(
+        e, 
+        stackTrace,
+        tagValue: 'delete_business_error',
+      );
+      
+      emit(state.copyWith(
+        status: BusinessListingsStatus.failure,
+        errorMessage: 'Failed to delete business: ${e.toString()}',
+      ));
+    }
+  }
+
   void searchBusinesses(String query) {
+    AppLogger.debug('Searching businesses', error: query);
     final filteredList = state.businesses.where((business) {
       return business.name.toLowerCase().contains(query.toLowerCase()) ||
           business.description.toLowerCase().contains(query.toLowerCase()) ||
@@ -49,6 +170,7 @@ class BusinessListingsCubit extends Cubit<BusinessListingsState> {
   }
 
   void filterByCategory(String category) {
+    AppLogger.debug('Filtering by category', error: category);
     final filteredList = state.businesses.where((business) {
       return business.category == category;
     }).toList();
@@ -58,91 +180,4 @@ class BusinessListingsCubit extends Cubit<BusinessListingsState> {
       filteredBusinesses: filteredList,
     ));
   }
-
-  Future<void> createBusiness(Business business) async {
-    try {
-      emit(state.copyWith(status: BusinessListingsStatus.loading));
-      
-      await _supabaseClient
-          .from('businesses')
-          .insert({
-            'name': business.name,
-            'description': business.description,
-            'category': business.category,
-            'address': business.address,
-            'phone': business.phone,
-            'email': business.email,
-            'website': business.website,
-            'rating': business.rating,
-            'is_verified': business.isVerified,
-            'is_member': business.isMember,
-            'images': business.images,
-            'location': business.location,
-            'operating_hours': business.operatingHours,
-            'is_open': business.isOpen,
-          });
-
-      // Reload the business listings after creating
-      await loadBusinessListings();
-    } catch (e) {
-      emit(state.copyWith(
-        status: BusinessListingsStatus.failure,
-        errorMessage: 'Failed to create business: ${e.toString()}',
-      ));
-    }
-  }
-
-  Future<void> updateBusiness(Business business) async {
-    try {
-      emit(state.copyWith(status: BusinessListingsStatus.loading));
-      
-      await _supabaseClient
-          .from('businesses')
-          .update({
-            'name': business.name,
-            'description': business.description,
-            'category': business.category,
-            'address': business.address,
-            'phone': business.phone,
-            'email': business.email,
-            'website': business.website,
-            'rating': business.rating,
-            'is_verified': business.isVerified,
-            'is_member': business.isMember,
-            'images': business.images,
-            'location': business.location,
-            'operating_hours': business.operatingHours,
-            'is_open': business.isOpen,
-          })
-          .eq('id', business.id);
-
-      // Reload the business listings after updating
-      await loadBusinessListings();
-    } catch (e) {
-      emit(state.copyWith(
-        status: BusinessListingsStatus.failure,
-        errorMessage: 'Failed to update business: ${e.toString()}',
-      ));
-    }
-  }
-
-  Future<void> deleteBusiness(String businessId) async {
-    try {
-      emit(state.copyWith(status: BusinessListingsStatus.loading));
-      
-      await _supabaseClient
-          .from('businesses')
-          .delete()
-          .eq('id', businessId);
-
-      // Reload the business listings after deleting
-      await loadBusinessListings();
-    } catch (e) {
-      emit(state.copyWith(
-        status: BusinessListingsStatus.failure,
-        errorMessage: 'Failed to delete business: ${e.toString()}',
-      ));
-    }
-  }
-
 }

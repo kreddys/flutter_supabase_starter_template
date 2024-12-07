@@ -34,7 +34,7 @@ create trigger update_votes_updated_at
   for each row
   execute function update_updated_at_column();
 
-  -- Create role enum
+-- Create role enum
 create type user_role as enum ('user', 'admin', 'moderator');
 
 -- Create user_roles table
@@ -54,8 +54,11 @@ alter table user_roles enable row level security;
 create policy "Admins can manage roles"
     on user_roles for all
     using (
-        auth.uid() in (
-            select user_id from user_roles where role = 'admin'
+        exists (
+            select 1 
+            from user_roles 
+            where user_id = auth.uid() 
+            and role = 'admin'
         )
     );
 
@@ -116,8 +119,11 @@ create policy "Business owners can manage their own listings"
 create policy "Admins can manage all businesses"
     on businesses for all
     using (
-        auth.uid() in (
-            select user_id from user_roles where role = 'admin'
+        exists (
+            select 1 
+            from user_roles 
+            where user_id = auth.uid() 
+            and role = 'admin'
         )
     );
 
