@@ -1,7 +1,6 @@
-// ghost-sync/index.ts
-
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 
+// Reuse the same interfaces from ghost-webhook
 interface GhostAuthor {
   id: string;
   name: string;
@@ -32,254 +31,464 @@ interface GhostPost {
   plaintext: string | null;
 }
 
-interface GhostResponse {
-  posts: GhostPost[];
-  meta: {
-    pagination: {
-      page: number;
-      limit: number;
-      pages: number;
-      total: number;
-      next: number | null;
-      prev: number | null;
-    }
-  }
+interface SyncResult {
+  postId: string;
+  success: boolean;
+  articleId?: string;
+  error?: string;
 }
 
+// Reuse the AppLogger class
 class AppLogger {
+  static debug(message: string, data?: any) {
+    console.log(`[DEBUG] ${new Date().toISOString()} - ${message}`, data ? JSON.stringify(data, null, 2) : '');
+  }
+
   static info(message: string, data?: any) {
-    console.log(JSON.stringify({
-      level: 'INFO',
-      timestamp: new Date().toISOString(),
-      message,
-      data: data || null
-    }));
+    console.log(`[INFO] ${new Date().toISOString()} - ${message}`, data ? JSON.stringify(data, null, 2) : '');
   }
 
   static error(message: string, error?: any) {
-    console.error(JSON.stringify({
-      level: 'ERROR',
-      timestamp: new Date().toISOString(),
-      message,
-      error: error ? (error.stack || error.message || error) : null
-    }));
-  }
-
-  static debug(message: string, data?: any) {
-    console.debug(JSON.stringify({
-      level: 'DEBUG',
-      timestamp: new Date().toISOString(),
-      message,
-      data: data || null
-    }));
+    console.error(`[ERROR] ${new Date().toISOString()} - ${message}`, error ? JSON.stringify(error, null, 2) : '');
   }
 }
 
-async function fetchAllPosts(appUrl: string, appKey: string): Promise<GhostPost[]> {
-  try {
-    AppLogger.info('Starting to fetch all posts from Ghost API');
-    let allPosts: GhostPost[] = [];
-    let currentPage = 1;
-    let hasMorePages = true;
+async function upsertAuthors(supabaseUrl: string, supabaseKey: string, authors: GhostAuthor[], requestId: string) {
+  const authorPromises = authors.map(async (author) => {
+    try {
+      AppLogger.debug(`Attempting to upsert author`, {
+        requestId,
+        authorId: author.id,
+        authorData: author
+      });
 
-    while (hasMorePages) {
-      AppLogger.debug(`Fetching page ${currentPage}`);
-      const response = await fetch(
-        `${appUrl}/ghost/api/content/posts/?key=${appKey}&include=authors,tags&page=${currentPage}`,
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
+      // First try to update existing record
+      const authorResponse = await fetch(`${supabaseUrl}/rest/v1/authors?ghost_id=eq.${author.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          ghost_id: author.id,
+          name: author.name,
+          slug: author.slug,
+          email: author.email,
+          profile_image: author.profile_image
+        })
+      });
+
+      // Read the response text once and store it
+      const responseText = await authorResponse.text();
+      let authorData;
+
+      if (authorResponse.ok) {
+        try {
+          // Try to parse the response text if it's not empty
+          authorData = responseText ? JSON.parse(responseText) : null;
+        } catch (parseError) {
+          AppLogger.error(`Failed to parse author response`, {
+            requestId,
+            authorId: author.id,
+            responseText,
+            error: parseError
+          });
         }
-      );
+      }
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        AppLogger.error(`Failed to fetch page ${currentPage}`, {
-          status: response.status,
-          error: errorText
+      // If no existing record found or update returned no content, create new record
+      if (!authorData || (Array.isArray(authorData) && authorData.length === 0)) {
+        AppLogger.debug(`No existing author found or empty update result, creating new record`, {
+          requestId,
+          authorId: author.id
         });
-        throw new Error(`Failed to fetch posts: ${errorText}`);
-      }
 
-      const data: GhostResponse = await response.json();
-      allPosts = [...allPosts, ...data.posts];
-
-      AppLogger.info(`Fetched page ${currentPage}`, {
-        postsInPage: data.posts.length,
-        totalPosts: data.meta.pagination.total,
-        currentTotal: allPosts.length
-      });
-
-      hasMorePages = currentPage < data.meta.pagination.pages;
-      currentPage++;
-    }
-
-    AppLogger.info(`Successfully fetched all posts`, {
-      totalPosts: allPosts.length
-    });
-
-    return allPosts;
-  } catch (error) {
-    AppLogger.error('Error in fetchAllPosts', error);
-    throw error;
-  }
-}
-
-async function processPost(
-  post: GhostPost,
-  supabaseUrl: string,
-  supabaseKey: string,
-  requestId: string
-): Promise<string> {
-  try {
-    AppLogger.debug(`Processing post: ${post.title}`, { postId: post.id, requestId });
-
-    // Check if article exists
-    const checkResponse = await fetch(
-      `${supabaseUrl}/rest/v1/articles?ghost_id=eq.${post.id}`,
-      {
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-        }
-      }
-    );
-
-    const existingArticles = await checkResponse.json();
-    const exists = existingArticles.length > 0;
-    const articleId = exists ? existingArticles[0].id : crypto.randomUUID();
-
-    AppLogger.debug(`Article ${exists ? 'exists' : 'is new'}`, { articleId, ghostId: post.id });
-
-    // Insert or update article
-    const method = exists ? 'PATCH' : 'POST';
-    const endpoint = exists
-      ? `${supabaseUrl}/rest/v1/articles?id=eq.${articleId}`
-      : `${supabaseUrl}/rest/v1/articles`;
-
-    const articleData = {
-      id: articleId,
-      ghost_id: post.id,
-      title: post.title,
-      description: post.custom_excerpt || post.plaintext?.substring(0, 200) || '',
-      html_content: post.html,
-      published_at: post.published_at,
-      image_url: post.feature_image,
-      slug: post.slug,
-      created_at: post.created_at,
-      updated_at: post.updated_at
-    };
-
-    const articleResponse = await fetch(endpoint, {
-      method: method,
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`,
-      },
-      body: JSON.stringify(articleData)
-    });
-
-    if (!articleResponse.ok) {
-      const errorText = await articleResponse.text();
-      AppLogger.error(`Failed to ${exists ? 'update' : 'create'} article`, {
-        articleId,
-        error: errorText
-      });
-      throw new Error(errorText);
-    }
-
-    // Fetch existing relationships
-    const [existingAuthorsResponse, existingTagsResponse] = await Promise.all([
-      fetch(`${supabaseUrl}/rest/v1/article_authors?article_id=eq.${articleId}`, {
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-        }
-      }),
-      fetch(`${supabaseUrl}/rest/v1/article_tags?article_id=eq.${articleId}`, {
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-        }
-      })
-    ]);
-
-    const existingAuthors = await existingAuthorsResponse.json();
-    const existingTags = await existingTagsResponse.json();
-
-    // Filter authors and tags to create
-    const newAuthors = post.authors.filter(
-      author => !existingAuthors.some(existing => existing.ghost_id === author.id)
-    );
-    const newTags = post.tags.filter(
-      tag => !existingTags.some(existing => existing.ghost_id === tag.id)
-    );
-
-    // Create relationships for new authors and tags
-    const relationshipPromises = [
-      ...newAuthors.map(author =>
-        fetch(`${supabaseUrl}/rest/v1/article_authors`, {
+        const insertResponse = await fetch(`${supabaseUrl}/rest/v1/authors`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'apikey': supabaseKey,
             'Authorization': `Bearer ${supabaseKey}`,
+            'Prefer': 'return=representation'
           },
           body: JSON.stringify({
-            id: crypto.randomUUID(),
-            article_id: articleId,
             ghost_id: author.id,
             name: author.name,
             slug: author.slug,
             email: author.email,
             profile_image: author.profile_image
           })
+        });
+
+        // Read and store the insert response
+        const insertResponseText = await insertResponse.text();
+
+        if (!insertResponse.ok) {
+          throw new Error(`Failed to insert author (Status ${insertResponse.status}): ${insertResponseText}`);
+        }
+
+        try {
+          authorData = JSON.parse(insertResponseText);
+        } catch (parseError) {
+          throw new Error(`Failed to parse insert response: ${parseError.message}`);
+        }
+      }
+
+      // Validate the final author data
+      if (!Array.isArray(authorData) || authorData.length === 0) {
+        throw new Error(`Invalid author response format. Received: ${JSON.stringify(authorData)}`);
+      }
+
+      AppLogger.debug(`Successfully upserted author`, {
+        requestId,
+        authorId: author.id,
+        supabaseId: authorData[0].id
+      });
+
+      return authorData[0].id;
+    } catch (error) {
+      AppLogger.error(`Error upserting author`, {
+        requestId,
+        authorId: author.id,
+        error: {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        }
+      });
+      throw error;
+    }
+  });
+
+  try {
+    return await Promise.all(authorPromises);
+  } catch (error) {
+    AppLogger.error(`Failed to upsert authors batch`, {
+      requestId,
+      error: {
+        message: error.message,
+        stack: error.stack
+      }
+    });
+    throw error;
+  }
+}
+
+async function upsertTags(supabaseUrl: string, supabaseKey: string, tags: GhostTag[], requestId: string) {
+  const tagPromises = tags.map(async (tag) => {
+    try {
+      AppLogger.debug(`Attempting to upsert tag`, {
+        requestId,
+        tagId: tag.id,
+        tagData: tag
+      });
+
+      // First try to update existing record
+      const tagResponse = await fetch(`${supabaseUrl}/rest/v1/tags?ghost_id=eq.${tag.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          ghost_id: tag.id,
+          name: tag.name,
+          slug: tag.slug,
+          description: tag.description
         })
-      ),
-      ...newTags.map(tag =>
-        fetch(`${supabaseUrl}/rest/v1/article_tags`, {
+      });
+
+      // Read the response text once and store it
+      const responseText = await tagResponse.text();
+      let tagData;
+
+      if (tagResponse.ok) {
+        try {
+          // Try to parse the response text if it's not empty
+          tagData = responseText ? JSON.parse(responseText) : null;
+        } catch (parseError) {
+          AppLogger.error(`Failed to parse tag response`, {
+            requestId,
+            tagId: tag.id,
+            responseText,
+            error: parseError
+          });
+        }
+      }
+
+      // If no existing record found or update returned no content, create new record
+      if (!tagData || (Array.isArray(tagData) && tagData.length === 0)) {
+        AppLogger.debug(`No existing tag found or empty update result, creating new record`, {
+          requestId,
+          tagId: tag.id
+        });
+
+        const insertResponse = await fetch(`${supabaseUrl}/rest/v1/tags`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'apikey': supabaseKey,
             'Authorization': `Bearer ${supabaseKey}`,
+            'Prefer': 'return=representation'
           },
           body: JSON.stringify({
-            id: crypto.randomUUID(),
-            article_id: articleId,
             ghost_id: tag.id,
             name: tag.name,
             slug: tag.slug,
             description: tag.description
           })
-        })
-      )
-    ];
+        });
 
-    await Promise.all(relationshipPromises);
-    AppLogger.info(`Successfully processed article`, { articleId, title: post.title });
+        // Read and store the insert response
+        const insertResponseText = await insertResponse.text();
 
-    return articleId;
+        if (!insertResponse.ok) {
+          throw new Error(`Failed to insert tag (Status ${insertResponse.status}): ${insertResponseText}`);
+        }
+
+        try {
+          tagData = JSON.parse(insertResponseText);
+        } catch (parseError) {
+          throw new Error(`Failed to parse insert response: ${parseError.message}`);
+        }
+      }
+
+      // Validate the final tag data
+      if (!Array.isArray(tagData) || tagData.length === 0) {
+        throw new Error(`Invalid tag response format. Received: ${JSON.stringify(tagData)}`);
+      }
+
+      AppLogger.debug(`Successfully upserted tag`, {
+        requestId,
+        tagId: tag.id,
+        supabaseId: tagData[0].id
+      });
+
+      return tagData[0].id;
+    } catch (error) {
+      AppLogger.error(`Error upserting tag`, {
+        requestId,
+        tagId: tag.id,
+        error: {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        }
+      });
+      throw error;
+    }
+  });
+
+  try {
+    return await Promise.all(tagPromises);
   } catch (error) {
-    AppLogger.error(`Failed to process post`, { postId: post.id, error });
+    AppLogger.error(`Failed to upsert tags batch`, {
+      requestId,
+      error: {
+        message: error.message,
+        stack: error.stack
+      }
+    });
     throw error;
   }
 }
 
+async function createArticleRelations(
+  supabaseUrl: string, 
+  supabaseKey: string, 
+  articleId: string, 
+  authorIds: string[], 
+  tagIds: string[], 
+  requestId: string
+) {
+  try {
+    // First, delete existing relations
+    await fetch(`${supabaseUrl}/rest/v1/article_authors?article_id=eq.${articleId}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      }
+    });
+
+    await fetch(`${supabaseUrl}/rest/v1/article_tags?article_id=eq.${articleId}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      }
+    });
+
+    // Create new author relations
+    const authorRelations = authorIds.map(authorId => ({
+      article_id: articleId,
+      author_id: authorId
+    }));
+
+    if (authorRelations.length > 0) {
+      const authorRelationResponse = await fetch(`${supabaseUrl}/rest/v1/article_authors`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`
+        },
+        body: JSON.stringify(authorRelations)
+      });
+
+      if (!authorRelationResponse.ok) {
+        throw new Error(`Failed to create author relations: ${await authorRelationResponse.text()}`);
+      }
+    }
+
+    // Create new tag relations
+    const tagRelations = tagIds.map(tagId => ({
+      article_id: articleId,
+      tag_id: tagId
+    }));
+
+    if (tagRelations.length > 0) {
+      const tagRelationResponse = await fetch(`${supabaseUrl}/rest/v1/article_tags`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`
+        },
+        body: JSON.stringify(tagRelations)
+      });
+
+      if (!tagRelationResponse.ok) {
+        throw new Error(`Failed to create tag relations: ${await tagRelationResponse.text()}`);
+      }
+    }
+  } catch (error) {
+    AppLogger.error(`Error creating article relations`, { requestId, articleId, error });
+    throw error;
+  }
+}
+
+async function processPost(supabaseUrl: string, supabaseKey: string, post: GhostPost, requestId: string) {
+  try {
+    // 1. Insert/Update Authors
+    const authorIds = await upsertAuthors(supabaseUrl, supabaseKey, post.authors, requestId);
+
+    // 2. Insert/Update Tags
+    const tagIds = await upsertTags(supabaseUrl, supabaseKey, post.tags, requestId);
+
+    // 3. Insert/Update Article
+    const articleResponse = await fetch(`${supabaseUrl}/rest/v1/articles`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify({
+        ghost_id: post.id,
+        title: post.title,
+        description: post.custom_excerpt || post.plaintext?.substring(0, 200) || '',
+        html_content: post.html,
+        published_at: post.published_at,
+        image_url: post.feature_image,
+        slug: post.slug,
+        created_at: post.created_at,
+        updated_at: post.updated_at
+      }),
+    });
+
+    let articleData: any[];
+
+    if (articleResponse.status === 409) {
+      AppLogger.info(`Article with ghost_id ${post.id} already exists, updating instead`);
+      
+      const updateResponse = await fetch(
+        `${supabaseUrl}/rest/v1/articles?ghost_id=eq.${post.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify({
+            title: post.title,
+            description: post.custom_excerpt || post.plaintext?.substring(0, 200) || '',
+            html_content: post.html,
+            published_at: post.published_at,
+            image_url: post.feature_image,
+            slug: post.slug,
+            updated_at: post.updated_at
+          }),
+        }
+      );
+
+      if (!updateResponse.ok) {
+        const updateResponseText = await updateResponse.text();
+        throw new Error(`Failed to update article (Status ${updateResponse.status}): ${updateResponseText}`);
+      }
+
+      const updateResponseText = await updateResponse.text();
+      try {
+        articleData = JSON.parse(updateResponseText);
+      } catch (parseError) {
+        throw new Error(`Failed to parse update response: ${parseError.message}`);
+      }
+    } else {
+      if (!articleResponse.ok) {
+        const articleResponseText = await articleResponse.text();
+        throw new Error(`Failed to insert article (Status ${articleResponse.status}): ${articleResponseText}`);
+      }
+
+      const articleResponseText = await articleResponse.text();
+      try {
+        articleData = JSON.parse(articleResponseText);
+      } catch (parseError) {
+        throw new Error(`Failed to parse insert response: ${parseError.message}`);
+      }
+    }
+
+    if (!Array.isArray(articleData) || articleData.length === 0) {
+      throw new Error(`Invalid article response format. Expected array with data`);
+    }
+
+    const articleId = articleData[0].id;
+
+    // 4. Create relations
+    await createArticleRelations(supabaseUrl, supabaseKey, articleId, authorIds, tagIds, requestId);
+
+    return articleId;
+  } catch (error) {
+    AppLogger.error(`Error processing post`, {
+      requestId,
+      postId: post.id,
+      error: {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      }
+    });
+    throw error;
+  }
+}
 
 serve(async (req) => {
   const requestId = crypto.randomUUID();
-  AppLogger.info(`Starting Ghost sync`, { requestId });
+  AppLogger.info(`Starting sync processing`, { requestId });
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  const appUrl = Deno.env.get('APP_URL');
-  const appKey = Deno.env.get('APP_KEY');
+  const ghostUrl = Deno.env.get('GHOST_URL');
+  const ghostKey = Deno.env.get('GHOST_KEY');
 
-  if (!supabaseUrl || !supabaseKey || !appUrl || !appKey) {
-    AppLogger.error('Missing required environment variables');
+  if (!supabaseUrl || !supabaseKey || !ghostUrl || !ghostKey) {
+    AppLogger.error(`Environment variables missing`, { requestId });
     return new Response(JSON.stringify({
       success: false,
       error: 'Missing required environment variables'
@@ -290,39 +499,53 @@ serve(async (req) => {
   }
 
   try {
-    const posts = await fetchAllPosts(appUrl, appKey);
-    const processed: string[] = [];
+    // Fetch posts from Ghost API
+    const ghostApiUrl = `${ghostUrl}/ghost/api/content/posts/?key=${ghostKey}&include=authors,tags&formats=html,plaintext&limit=all`;
+    const ghostResponse = await fetch(ghostApiUrl);
 
-    AppLogger.info(`Starting to process ${posts.length} posts`, { requestId });
-
-    for (const post of posts) {
-      const articleId = await processPost(
-        post,
-        supabaseUrl,
-        supabaseKey,
-        requestId
-      );
-      processed.push(articleId);
+    if (!ghostResponse.ok) {
+      throw new Error(`Failed to fetch posts from Ghost: ${ghostResponse.statusText}`);
     }
 
-    AppLogger.info(`Ghost sync completed successfully`, {
-      requestId,
-      processedCount: processed.length,
-      totalPosts: posts.length
-    });
+    const ghostData = await ghostResponse.json();
+    const posts = ghostData.posts as GhostPost[];
+
+    AppLogger.info(`Fetched ${posts.length} posts from Ghost`, { requestId });
+
+    // Process each post
+    const results: SyncResult[] = [];
+    for (const post of posts) {
+      try {
+        const articleId = await processPost(supabaseUrl, supabaseKey, post, requestId);
+        results.push({ postId: post.id, success: true, articleId });
+      } catch (error) {
+        results.push({ postId: post.id, success: false, error: error.message });
+        // Continue processing other posts even if one fails
+        continue;
+      }
+    }
+
+    AppLogger.info(`Sync completed`, { requestId, results });
 
     return new Response(JSON.stringify({
       success: true,
-      message: `Processed ${processed.length} articles`,
-      processed: processed
+      message: 'Sync completed',
+      results
     }), {
       headers: { "Content-Type": "application/json" },
       status: 200
     });
 
   } catch (error) {
-    AppLogger.error(`Ghost sync failed`, { requestId, error });
-
+    AppLogger.error(`Error processing sync`, { 
+      requestId, 
+      error: {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      }
+    });
+    
     return new Response(JSON.stringify({
       success: false,
       error: error.message
