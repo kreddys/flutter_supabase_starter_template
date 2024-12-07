@@ -102,4 +102,24 @@ class Business {
       isOpen: json['is_open'] as bool? ?? false,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'description': description,
+      'category': category,
+      'address': address,
+      'phone': phone,
+      'email': email,
+      'website': website,
+      'rating': rating,
+      'is_verified': isVerified,
+      'is_member': isMember,
+      'images': images,
+      'location': location,
+      'operating_hours': operatingHours,
+      'is_open': isOpen,
+    };
+  }
+
 }

@@ -58,4 +58,91 @@ class BusinessListingsCubit extends Cubit<BusinessListingsState> {
       filteredBusinesses: filteredList,
     ));
   }
+
+  Future<void> createBusiness(Business business) async {
+    try {
+      emit(state.copyWith(status: BusinessListingsStatus.loading));
+      
+      await _supabaseClient
+          .from('businesses')
+          .insert({
+            'name': business.name,
+            'description': business.description,
+            'category': business.category,
+            'address': business.address,
+            'phone': business.phone,
+            'email': business.email,
+            'website': business.website,
+            'rating': business.rating,
+            'is_verified': business.isVerified,
+            'is_member': business.isMember,
+            'images': business.images,
+            'location': business.location,
+            'operating_hours': business.operatingHours,
+            'is_open': business.isOpen,
+          });
+
+      // Reload the business listings after creating
+      await loadBusinessListings();
+    } catch (e) {
+      emit(state.copyWith(
+        status: BusinessListingsStatus.failure,
+        errorMessage: 'Failed to create business: ${e.toString()}',
+      ));
+    }
+  }
+
+  Future<void> updateBusiness(Business business) async {
+    try {
+      emit(state.copyWith(status: BusinessListingsStatus.loading));
+      
+      await _supabaseClient
+          .from('businesses')
+          .update({
+            'name': business.name,
+            'description': business.description,
+            'category': business.category,
+            'address': business.address,
+            'phone': business.phone,
+            'email': business.email,
+            'website': business.website,
+            'rating': business.rating,
+            'is_verified': business.isVerified,
+            'is_member': business.isMember,
+            'images': business.images,
+            'location': business.location,
+            'operating_hours': business.operatingHours,
+            'is_open': business.isOpen,
+          })
+          .eq('id', business.id);
+
+      // Reload the business listings after updating
+      await loadBusinessListings();
+    } catch (e) {
+      emit(state.copyWith(
+        status: BusinessListingsStatus.failure,
+        errorMessage: 'Failed to update business: ${e.toString()}',
+      ));
+    }
+  }
+
+  Future<void> deleteBusiness(String businessId) async {
+    try {
+      emit(state.copyWith(status: BusinessListingsStatus.loading));
+      
+      await _supabaseClient
+          .from('businesses')
+          .delete()
+          .eq('id', businessId);
+
+      // Reload the business listings after deleting
+      await loadBusinessListings();
+    } catch (e) {
+      emit(state.copyWith(
+        status: BusinessListingsStatus.failure,
+        errorMessage: 'Failed to delete business: ${e.toString()}',
+      ));
+    }
+  }
+
 }
