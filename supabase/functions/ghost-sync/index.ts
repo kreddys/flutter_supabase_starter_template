@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
+import { cron } from "https://deno.land/x/deno_cron/cron.ts";
 
 // Reuse the same interfaces from ghost-webhook
 interface GhostAuthor {
@@ -478,9 +479,9 @@ async function processPost(supabaseUrl: string, supabaseKey: string, post: Ghost
   }
 }
 
-serve(async (req) => {
+async function performSync() {
   const requestId = crypto.randomUUID();
-  AppLogger.info(`Starting sync processing`, { requestId });
+  AppLogger.info(`Starting scheduled sync`, { requestId });
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -489,13 +490,7 @@ serve(async (req) => {
 
   if (!supabaseUrl || !supabaseKey || !ghostUrl || !ghostKey) {
     AppLogger.error(`Environment variables missing`, { requestId });
-    return new Response(JSON.stringify({
-      success: false,
-      error: 'Missing required environment variables'
-    }), {
-      headers: { "Content-Type": "application/json" },
-      status: 500
-    });
+    return;
   }
 
   try {
@@ -526,16 +521,6 @@ serve(async (req) => {
     }
 
     AppLogger.info(`Sync completed`, { requestId, results });
-
-    return new Response(JSON.stringify({
-      success: true,
-      message: 'Sync completed',
-      results
-    }), {
-      headers: { "Content-Type": "application/json" },
-      status: 200
-    });
-
   } catch (error) {
     AppLogger.error(`Error processing sync`, { 
       requestId, 
@@ -545,7 +530,29 @@ serve(async (req) => {
         name: error.name
       }
     });
-    
+  }
+}
+
+// Schedule the sync to run every hour
+cron("0 * * * *", async () => {
+  try {
+    await performSync();
+  } catch (error) {
+    AppLogger.error("Scheduled sync failed", { error });
+  }
+});
+
+serve(async (req) => {
+  try {
+    await performSync();
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Sync triggered successfully'
+    }), {
+      headers: { "Content-Type": "application/json" },
+      status: 200
+    });
+  } catch (error) {
     return new Response(JSON.stringify({
       success: false,
       error: error.message
