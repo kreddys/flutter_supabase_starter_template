@@ -6,8 +6,6 @@ import 'package:amaravati_chamber/core/app/app.dart';
 import 'package:amaravati_chamber/dependency_injection.dart';
 import 'package:amaravati_chamber/core/monitoring/sentry_monitoring.dart';
 import 'package:amaravati_chamber/core/logging/app_logger.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 
 void main() async {
   AppLogger.info('Starting application initialization');
@@ -20,26 +18,7 @@ void main() async {
       AppLogger.debug('Flutter binding initialized');
 
       try {
-        await Firebase.initializeApp();
-        AppLogger.info('Firebase initialized successfully');
-
-        // Request notification permissions
-        final messaging = FirebaseMessaging.instance;
-        final settings = await messaging.requestPermission(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-
-        // Log permission status
-        AppLogger.info(
-            'Notification permission status: ${settings.authorizationStatus}');
-
-        // Get FCM token
-        final token = await messaging.getToken();
-        AppLogger.info(
-            'FCM Token: $token'); // You'll need this token to test notifications
-
+        
         await _initializeSupabase();
         AppLogger.info('Supabase initialized successfully');
 
