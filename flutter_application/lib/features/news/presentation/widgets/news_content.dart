@@ -14,6 +14,48 @@ class NewsContent extends StatefulWidget {
   State<NewsContent> createState() => _NewsContentState();
 }
 
+class _TagFilter extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // Get unique tags from all articles
+    final allTags = context.select((NewsCubit cubit) => 
+      cubit.state.maybeWhen(
+        loaded: (articles, _, __) {
+          final tags = {'All'};
+          for (var article in articles) {
+            tags.addAll(article.tags.map((t) => t.name));
+          }
+          return tags.toList()..sort();
+        },
+        orElse: () => ['All'],
+      )
+    );
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: allTags.map((tag) => _buildTagChip(context, tag)).toList(),
+      ),
+    );
+  }
+
+  Widget _buildTagChip(BuildContext context, String tag) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: FilterChip(
+        label: Text(tag),
+        selected: context.read<NewsCubit>().selectedTag == tag,
+        onSelected: (selected) {
+          if (selected) {
+            context.read<NewsCubit>().filterByTag(tag);
+          }
+        },
+      ),
+    );
+  }
+}
+
 class _NewsContentState extends State<NewsContent> {
   final ScrollController _scrollController = ScrollController();
   bool _isSearching = false;
@@ -81,13 +123,20 @@ class _NewsContentState extends State<NewsContent> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(context),
-      body: _buildBody(context),
-    );
-  }
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: _buildAppBar(context),
+    body: Column(
+      children: [
+        if (!_isSearching) _TagFilter(),
+        Expanded(
+          child: _buildBody(context),
+        ),
+      ],
+    ),
+  );
+}
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(

@@ -18,11 +18,59 @@ class NewsCubit extends Cubit<NewsState> {
   static const int _itemsPerPage = 10;
   bool _hasMoreData = true;
   bool _isLoadingMore = false;
+  String _selectedTag = 'All';
+  String _searchQuery = '';
 
   NewsCubit(
     this._newsRepository,
     this._votingRepository,
   ) : super(const NewsState.initial());
+
+  String get selectedTag => _selectedTag;
+
+  Future<void> filterByTag(String tag) async {
+    AppLogger.info('Filtering articles by tag: $tag');
+    SentryMonitoring.addBreadcrumb(
+      message: 'Filtering articles by tag',
+      category: 'news',
+      data: {'tag': tag},
+    );
+
+    _selectedTag = tag;
+    emit(const NewsState.loading());
+    _currentPage = 1;
+    _hasMoreData = true;
+    _allArticles.clear();
+
+    final result = await _newsRepository.getNewsArticles(
+      page: _currentPage,
+      itemsPerPage: _itemsPerPage,
+      tagFilter: tag == 'All' ? null : tag,
+      searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
+    );
+    
+    result.fold(
+      (error) {
+        AppLogger.error('Failed to filter articles by tag: $error');
+        SentryMonitoring.captureException(
+          error,
+          StackTrace.current,
+          tagValue: 'tag_filter_failure',
+        );
+        emit(NewsState.error(error));
+      },
+      (articles) {
+        AppLogger.info('Successfully filtered ${articles.length} articles by tag');
+        _allArticles = articles;
+        _hasMoreData = articles.length >= _itemsPerPage;
+        emit(NewsState.loaded(
+          articles: articles,
+          isLoadingMore: false,
+          hasMoreData: _hasMoreData,
+        ));
+      },
+    );
+  }
 
   Future<void> loadNews() async {
     AppLogger.info('Loading initial news articles');
@@ -40,6 +88,8 @@ class NewsCubit extends Cubit<NewsState> {
     final result = await _newsRepository.getNewsArticles(
       page: _currentPage,
       itemsPerPage: _itemsPerPage,
+      tagFilter: _selectedTag == 'All' ? null : _selectedTag,
+      searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
     );
     
     result.fold(
@@ -88,6 +138,8 @@ class NewsCubit extends Cubit<NewsState> {
     final result = await _newsRepository.getNewsArticles(
       page: _currentPage + 1,
       itemsPerPage: _itemsPerPage,
+      tagFilter: _selectedTag == 'All' ? null : _selectedTag,
+      searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
     );
 
     result.fold(
@@ -155,22 +207,21 @@ class NewsCubit extends Cubit<NewsState> {
       data: {'query': query},
     );
 
+    _searchQuery = query;
+
     if (query.isEmpty) {
-      AppLogger.debug('Empty search query, clearing results');
-      emit(NewsState.loaded(
-        articles: _searchResults = [],
-        isLoadingMore: false,
-        hasMoreData: _hasMoreData,
-      ));
+      AppLogger.debug('Empty search query, loading all articles');
+      await loadNews();
       return;
     }
 
     emit(const NewsState.loading());
     
     final result = await _newsRepository.getNewsArticles(
-      page: _currentPage,
+      page: 1,
       itemsPerPage: 999999,
       searchQuery: query,
+      tagFilter: _selectedTag == 'All' ? null : _selectedTag,
     );
     
     result.fold(

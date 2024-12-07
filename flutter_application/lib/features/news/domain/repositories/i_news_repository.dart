@@ -6,5 +6,6 @@ abstract class INewsRepository {
     int page = 1,
     int itemsPerPage = 10,
     String? searchQuery,
+    String? tagFilter,
   });
 }

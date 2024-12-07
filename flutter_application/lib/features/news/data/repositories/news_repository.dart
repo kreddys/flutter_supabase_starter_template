@@ -19,6 +19,7 @@ class NewsRepository implements INewsRepository {
     int page = 1,
     int itemsPerPage = 10,
     String? searchQuery,
+    String? tagFilter,
   }) async {
     AppLogger.info(
       'Fetching news articles - Page: $page, ItemsPerPage: $itemsPerPage, SearchQuery: $searchQuery'
