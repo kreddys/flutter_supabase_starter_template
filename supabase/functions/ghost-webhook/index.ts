@@ -1,15 +1,6 @@
-import { serve } from "https://deno.land/std@0.182.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 
-// UUID generation function
-function generateUUID() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
-
-// Interface definitions remain the same
+// Interfaces
 interface GhostWebhookPayload {
   post: {
     current: {
@@ -18,18 +9,23 @@ interface GhostWebhookPayload {
       html: string;
       slug: string;
       feature_image: string | null;
-      excerpt: string;
+      excerpt: string | null;
       published_at: string;
-      primary_author: {
+      tags: Array<{
+        id: string;
         name: string;
-      };
+        slug: string;
+      }>;
+      authors: Array<{
+        name: string;
+      }>;
     };
   };
 }
 
 interface SupabaseArticle {
   id: string;
-  ghost_id: string; // Added to store original Ghost ID
+  ghost_id: string;
   title: string;
   description: string;
   author: string;
@@ -37,83 +33,56 @@ interface SupabaseArticle {
   image_url: string;
   html_content: string;
   slug: string;
+  tags: string[];
 }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// Helper function to generate UUID
+function generateUUID(): string {
+  return crypto.randomUUID();
+}
+
+// Helper function for debug logging
+function addDebugLog(message: string, data?: any) {
+  console.log(`[${new Date().toISOString()}] ${message}`, data ? JSON.stringify(data) : '');
+}
 
 serve(async (req) => {
-  const requestStartTime = performance.now();
-  const debugLog: any[] = [];
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-  function addDebugLog(message: string, data?: any) {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] ${message}`, data || '');
-    debugLog.push({ timestamp, message, data });
-  }
-
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing required environment variables');
   }
 
   try {
-    addDebugLog('Received webhook request', {
-      method: req.method,
-      headers: Object.fromEntries(req.headers.entries())
-    });
-
-    const payload = await req.json() as GhostWebhookPayload;
+    const payload: GhostWebhookPayload = await req.json();
     addDebugLog('Parsed webhook payload', payload);
 
     if (!payload.post?.current) {
-      throw new Error('Invalid webhook payload: No post data received');
+      throw new Error('Invalid webhook payload structure');
     }
 
     const post = payload.post.current;
-
-    // Validate required fields with detailed logging
-    const requiredFields = ['id', 'title', 'html', 'slug', 'published_at'];
-    const fieldValidation = requiredFields.map(field => ({
-      field,
-      present: Boolean(post[field]),
-      value: post[field]
-    }));
-    addDebugLog('Field validation results', fieldValidation);
-
-    const missingFields = fieldValidation.filter(f => !f.present).map(f => f.field);
-    if (missingFields.length > 0) {
-      throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
-    }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY');
-
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing environment variables: SUPABASE_URL or SUPABASE_ANON_KEY');
-    }
-
-    // Generate UUID and transform data
-    const newUUID = generateUUID();
-    addDebugLog('Generated UUID', newUUID);
+    
+    // Extract tags from the post
+    const tags = post.tags?.map(tag => tag.name) || [];
+    addDebugLog('Extracted tags', tags);
 
     const article: SupabaseArticle = {
-      id: newUUID,
-      ghost_id: post.id, // Store original Ghost ID
+      id: generateUUID(),
+      ghost_id: post.id,
       title: post.title,
       description: post.excerpt || '',
-      author: post.primary_author?.name || 'Amaravati Chamber',
+      author: post.authors?.[0]?.name || 'Amaravati Chamber',
       published_at: post.published_at,
       image_url: post.feature_image || '',
       html_content: post.html,
       slug: post.slug,
+      tags: tags
     };
 
-    addDebugLog('Transformed article data', article);
-
-    // Insert/update article in Supabase
-    const response = await fetch(`${supabaseUrl}/rest/v1/articles`, {
+    // Insert/update article
+    const articleResponse = await fetch(`${supabaseUrl}/rest/v1/articles`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -124,58 +93,65 @@ serve(async (req) => {
       body: JSON.stringify(article)
     });
 
-    const responseText = await response.text();
-    addDebugLog('Supabase API response', {
-      status: response.status,
-      statusText: response.statusText,
-      body: responseText
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to insert/update article: ${responseText}`);
+    if (!articleResponse.ok) {
+      throw new Error(`Failed to insert/update article: ${await articleResponse.text()}`);
     }
 
-    const requestDuration = performance.now() - requestStartTime;
-    addDebugLog('Request completed', {
-      duration: `${requestDuration.toFixed(2)}ms`,
-      success: true
-    });
+    // Process tags
+    if (tags.length > 0) {
+      const tagPromises = tags.map(async (tagName) => {
+        // Insert tag
+        await fetch(`${supabaseUrl}/rest/v1/article_tags`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Prefer': 'resolution=merge-duplicates'
+          },
+          body: JSON.stringify({
+            name: tagName,
+            slug: tagName.toLowerCase().replace(/\s+/g, '-')
+          })
+        });
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Article synced successfully',
-        articleId: article.id,
-        ghostId: article.ghost_id,
-        debug: debugLog,
-        duration: requestDuration
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200
-      }
-    );
+        // Create article-tag relationship
+        await fetch(`${supabaseUrl}/rest/v1/article_tag_relations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Prefer': 'resolution=merge-duplicates'
+          },
+          body: JSON.stringify({
+            article_id: article.id,
+            tag_name: tagName
+          })
+        });
+      });
+
+      await Promise.all(tagPromises);
+      addDebugLog('Processed tags and relationships', { tagCount: tags.length });
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Article processed successfully',
+      articleId: article.id
+    }), {
+      headers: { "Content-Type": "application/json" },
+      status: 200
+    });
 
   } catch (error) {
-    const requestDuration = performance.now() - requestStartTime;
-    addDebugLog('Error processing webhook', {
-      error: error.message,
-      stack: error.stack,
-      duration: `${requestDuration.toFixed(2)}ms`
+    addDebugLog('Error processing webhook', { error: error.message });
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      headers: { "Content-Type": "application/json" },
+      status: 500
     });
-
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message,
-        debug: debugLog,
-        duration: requestDuration,
-        timestamp: new Date().toISOString()
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: error.message.includes('Invalid webhook payload') ? 400 : 500
-      }
-    );
   }
 });
