@@ -32,79 +32,94 @@ interface GhostPost {
   plaintext: string | null;
 }
 
+interface GhostResponse {
+  posts: GhostPost[];
+  meta: {
+    pagination: {
+      page: number;
+      limit: number;
+      pages: number;
+      total: number;
+      next: number | null;
+      prev: number | null;
+    }
+  }
+}
+
 class AppLogger {
-  static trace(message: string, error?: any, stackTrace?: string) {
+  static info(message: string, data?: any) {
     console.log(JSON.stringify({
-      level: 'TRACE',
-      timestamp: new Date().toISOString(),
-      message,
-      error,
-      stackTrace
-    }));
-  }
-
-  static debug(message: string, error?: any, stackTrace?: string) {
-    console.debug(JSON.stringify({
-      level: 'DEBUG',
-      timestamp: new Date().toISOString(),
-      message,
-      error,
-      stackTrace
-    }));
-  }
-
-  static info(message: string, error?: any, stackTrace?: string) {
-    console.info(JSON.stringify({
       level: 'INFO',
       timestamp: new Date().toISOString(),
       message,
-      error,
-      stackTrace
+      data: data || null
     }));
   }
 
-  static warning(message: string, error?: any, stackTrace?: string) {
-    console.warn(JSON.stringify({
-      level: 'WARNING',
-      timestamp: new Date().toISOString(),
-      message,
-      error,
-      stackTrace
-    }));
-  }
-
-  static error(message: string, error?: any, stackTrace?: string) {
+  static error(message: string, error?: any) {
     console.error(JSON.stringify({
       level: 'ERROR',
       timestamp: new Date().toISOString(),
       message,
-      error,
-      stackTrace: stackTrace || error?.stack
+      error: error ? (error.stack || error.message || error) : null
+    }));
+  }
+
+  static debug(message: string, data?: any) {
+    console.debug(JSON.stringify({
+      level: 'DEBUG',
+      timestamp: new Date().toISOString(),
+      message,
+      data: data || null
     }));
   }
 }
 
 async function fetchAllPosts(appUrl: string, appKey: string): Promise<GhostPost[]> {
   try {
-    AppLogger.info(`Fetching posts from Ghost API: ${appUrl}`);
-    const response = await fetch(`${appUrl}/ghost/api/content/posts/?key=${appKey}&include=authors,tags`, {
-      headers: {
-        'Content-Type': 'application/json'
+    AppLogger.info('Starting to fetch all posts from Ghost API');
+    let allPosts: GhostPost[] = [];
+    let currentPage = 1;
+    let hasMorePages = true;
+
+    while (hasMorePages) {
+      AppLogger.debug(`Fetching page ${currentPage}`);
+      const response = await fetch(
+        `${appUrl}/ghost/api/content/posts/?key=${appKey}&include=authors,tags&page=${currentPage}`,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        AppLogger.error(`Failed to fetch page ${currentPage}`, {
+          status: response.status,
+          error: errorText
+        });
+        throw new Error(`Failed to fetch posts: ${errorText}`);
       }
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      AppLogger.error('Failed to fetch posts from Ghost API', {
-        status: response.status,
-        error: errorText
+
+      const data: GhostResponse = await response.json();
+      allPosts = [...allPosts, ...data.posts];
+
+      AppLogger.info(`Fetched page ${currentPage}`, {
+        postsInPage: data.posts.length,
+        totalPosts: data.meta.pagination.total,
+        currentTotal: allPosts.length
       });
-      throw new Error(`Failed to fetch posts: ${errorText}`);
+
+      hasMorePages = currentPage < data.meta.pagination.pages;
+      currentPage++;
     }
 
-    const data = await response.json();
-    AppLogger.info(`Successfully fetched ${data.posts.length} posts from Ghost API`);
-    return data.posts;
+    AppLogger.info(`Successfully fetched all posts`, {
+      totalPosts: allPosts.length
+    });
+
+    return allPosts;
   } catch (error) {
     AppLogger.error('Error in fetchAllPosts', error);
     throw error;
@@ -112,8 +127,8 @@ async function fetchAllPosts(appUrl: string, appKey: string): Promise<GhostPost[
 }
 
 async function processPost(
-  post: GhostPost, 
-  supabaseUrl: string, 
+  post: GhostPost,
+  supabaseUrl: string,
   supabaseKey: string,
   requestId: string
 ): Promise<string> {
@@ -139,7 +154,7 @@ async function processPost(
 
     // Insert or update article
     const method = exists ? 'PATCH' : 'POST';
-    const endpoint = exists 
+    const endpoint = exists
       ? `${supabaseUrl}/rest/v1/articles?id=eq.${articleId}`
       : `${supabaseUrl}/rest/v1/articles`;
 
@@ -198,7 +213,7 @@ async function processPost(
 
     // Create new relationships
     const relationshipPromises = [
-      ...post.authors.map(author => 
+      ...post.authors.map(author =>
         fetch(`${supabaseUrl}/rest/v1/article_authors`, {
           method: 'POST',
           headers: {
@@ -257,11 +272,10 @@ serve(async (req) => {
   const appKey = Deno.env.get('APP_KEY');
 
   if (!supabaseUrl || !supabaseKey || !appUrl || !appKey) {
-    const error = new Error('Missing required environment variables');
-    AppLogger.error('Configuration error', error);
+    AppLogger.error('Missing required environment variables');
     return new Response(JSON.stringify({
       success: false,
-      error: error.message
+      error: 'Missing required environment variables'
     }), {
       headers: { "Content-Type": "application/json" },
       status: 500
@@ -272,10 +286,12 @@ serve(async (req) => {
     const posts = await fetchAllPosts(appUrl, appKey);
     const processed: string[] = [];
 
+    AppLogger.info(`Starting to process ${posts.length} posts`, { requestId });
+
     for (const post of posts) {
       const articleId = await processPost(
-        post, 
-        supabaseUrl, 
+        post,
+        supabaseUrl,
         supabaseKey,
         requestId
       );
@@ -284,7 +300,8 @@ serve(async (req) => {
 
     AppLogger.info(`Ghost sync completed successfully`, {
       requestId,
-      processedCount: processed.length
+      processedCount: processed.length,
+      totalPosts: posts.length
     });
 
     return new Response(JSON.stringify({
@@ -298,7 +315,7 @@ serve(async (req) => {
 
   } catch (error) {
     AppLogger.error(`Ghost sync failed`, { requestId, error });
-    
+
     return new Response(JSON.stringify({
       success: false,
       error: error.message
