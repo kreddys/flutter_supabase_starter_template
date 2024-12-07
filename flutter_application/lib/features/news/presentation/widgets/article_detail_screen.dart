@@ -9,9 +9,7 @@ class ArticleDetailScreen extends StatelessWidget {
 
   const ArticleDetailScreen({super.key, required this.article});
 
-  // Function to extract YouTube video ID from URL
   String? getYouTubeVideoId(String url) {
-    // Handle different YouTube URL formats
     RegExp regExp = RegExp(
       r'^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*',
     );
@@ -27,7 +25,6 @@ class ArticleDetailScreen extends StatelessWidget {
   void onTapFunction(BuildContext context, String url) {
     String? videoId = getYouTubeVideoId(url);
     if (videoId != null) {
-      // If it's a YouTube link, open in YouTube player
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -35,7 +32,6 @@ class ArticleDetailScreen extends StatelessWidget {
         ),
       );
     } else {
-      // If it's not a YouTube link, open in WebView
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -43,6 +39,61 @@ class ArticleDetailScreen extends StatelessWidget {
         ),
       );
     }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Widget _buildAuthorsAndTags(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Authors section
+        Text(
+          'Authors:',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 8,
+          children: article.authors.map((author) {
+            return Chip(
+              avatar: author.profileImage != null
+                  ? CircleAvatar(
+                      backgroundImage: NetworkImage(author.profileImage!),
+                    )
+                  : null,
+              label: Text(author.name),
+              backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 16),
+
+        // Tags section
+        if (article.tags.isNotEmpty) ...[
+          Text(
+            'Tags:',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 8,
+            children: article.tags.map((tag) {
+              return Chip(
+                label: Text(tag.name),
+                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+              );
+            }).toList(),
+          ),
+        ],
+      ],
+    );
   }
 
   @override
@@ -122,24 +173,18 @@ class ArticleDetailScreen extends StatelessWidget {
                       },
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'By ${article.author}',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                                ),
+                    Text(
+                      _formatDate(article.publishedAt),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.color
+                                ?.withOpacity(0.7),
                           ),
-                        ),
-                        Text(
-                          _formatDate(article.publishedAt),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                              ),
-                        ),
-                      ],
                     ),
+                    const SizedBox(height: 16),
+                    _buildAuthorsAndTags(context),
                     const SizedBox(height: 24),
                     Html(
                       data: article.htmlContent,
@@ -196,7 +241,10 @@ class ArticleDetailScreen extends StatelessWidget {
                         "blockquote": Style(
                           margin: Margins.symmetric(vertical: 16, horizontal: 16),
                           padding: HtmlPaddings.all(16),
-                          backgroundColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                          backgroundColor: Theme.of(context)
+                              .colorScheme
+                              .surfaceVariant
+                              .withOpacity(0.3),
                           border: Border(
                             left: BorderSide(
                               color: Theme.of(context).colorScheme.primary,
@@ -206,7 +254,8 @@ class ArticleDetailScreen extends StatelessWidget {
                           fontStyle: FontStyle.italic,
                         ),
                         "pre, code": Style(
-                          backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.surfaceVariant,
                           padding: HtmlPaddings.all(8),
                           margin: Margins.symmetric(vertical: 8),
                           fontFamily: "monospace",
@@ -217,32 +266,39 @@ class ArticleDetailScreen extends StatelessWidget {
                           tagsToExtend: {"iframe"},
                           builder: (extensionContext) {
                             final src = extensionContext.attributes['src'] ?? '';
-                            if (src.contains('youtube.com') || src.contains('youtu.be')) {
+                            if (src.contains('youtube.com') ||
+                                src.contains('youtu.be')) {
                               String? videoId = getYouTubeVideoId(src);
                               if (videoId != null) {
                                 return Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                   child: LayoutBuilder(
                                     builder: (context, constraints) {
                                       return Container(
-                                        width: constraints.maxWidth, // Use maximum available width
-                                        height: constraints.maxWidth * 9 / 16, // Maintain 16:9 aspect ratio
+                                        width: constraints.maxWidth,
+                                        height: constraints.maxWidth * 9 / 16,
                                         decoration: BoxDecoration(
                                           borderRadius: BorderRadius.circular(12),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.black.withOpacity(0.1),
+                                              color:
+                                                  Colors.black.withOpacity(0.1),
                                               blurRadius: 8,
                                               offset: const Offset(0, 2),
                                             ),
                                           ],
                                         ),
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                           child: YoutubePlayer(
-                                            controller: YoutubePlayerController.fromVideoId(
+                                            controller:
+                                                YoutubePlayerController
+                                                    .fromVideoId(
                                               videoId: videoId,
-                                              params: const YoutubePlayerParams(
+                                              params:
+                                                  const YoutubePlayerParams(
                                                 showControls: true,
                                                 showFullscreenButton: true,
                                                 mute: false,
@@ -276,10 +332,6 @@ class ArticleDetailScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
   }
 }
 

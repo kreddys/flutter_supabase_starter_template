@@ -1,5 +1,3 @@
-// lib/features/news/presentation/widgets/news_article_card.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import '../../domain/entities/news_article.dart';
@@ -99,6 +97,8 @@ class NewsArticleCard extends StatelessWidget {
           const SizedBox(height: 4),
           _buildArticleDescription(context),
           const SizedBox(height: 8),
+          _buildTags(context),
+          const SizedBox(height: 8),
           _buildArticleFooter(context),
         ],
       ),
@@ -140,19 +140,49 @@ class NewsArticleCard extends StatelessWidget {
     );
   }
 
+  Widget _buildTags(BuildContext context) {
+    if (article.tags.isEmpty) return const SizedBox();
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      children: article.tags.map((tag) {
+        return Chip(
+          label: Text(
+            tag.name,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildArticleFooter(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          '${article.author} • ${_formatDate(article.publishedAt)}',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.color
-                    ?.withOpacity(0.7),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildAuthors(context),
+              Text(
+                _formatDate(article.publishedAt),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.color
+                          ?.withOpacity(0.7),
+                    ),
               ),
+            ],
+          ),
         ),
         VoteButtons(
           entityId: article.id,
@@ -162,6 +192,22 @@ class NewsArticleCard extends StatelessWidget {
           onVote: (voteType) => onVote(article.id, voteType),
         ),
       ],
+    );
+  }
+
+  Widget _buildAuthors(BuildContext context) {
+    final authorNames = article.authors.map((author) => author.name).join(', ');
+    return Text(
+      authorNames,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.color
+                ?.withOpacity(0.7),
+          ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }

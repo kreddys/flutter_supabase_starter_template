@@ -26,39 +26,79 @@ class NewsRepository implements INewsRepository {
 
     try {
       final offset = (page - 1) * itemsPerPage;
-      final query = _supabaseClient.from('articles').select();
+      
+      // Updated query to include authors and tags through junction tables
+      var query = _supabaseClient
+          .from('articles')
+          .select('''
+            *,
+            article_authors!inner (
+              author:authors(*)
+            ),
+            article_tags!inner (
+              tag:tags(*)
+            )
+          ''');
 
-      final filteredQuery = searchQuery != null && searchQuery.isNotEmpty
-          ? query.ilike('title', '%$searchQuery%')
-          : query;
+      // Apply search filter if provided
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        query = query.ilike('title', '%$searchQuery%');
+      }
 
-      final response = await filteredQuery
+      // Apply ordering and pagination
+      final response = await query
           .order('published_at', ascending: false)
           .range(offset, offset + itemsPerPage - 1);
 
       AppLogger.debug('Fetched ${response.length} articles from database');
 
-      final articles = await Future.wait((response as List<dynamic>).map((post) async {
-        AppLogger.debug('Processing article ${post['id']}');
+      final articles = await Future.wait((response as List<dynamic>).map((article) async {
+        AppLogger.debug('Processing article ${article['id']}');
         
+        // Extract authors from the nested response
+        final authors = (article['article_authors'] as List<dynamic>)
+            .map((authorData) => Author(
+                  id: authorData['author']['id'],
+                  name: authorData['author']['name'],
+                  slug: authorData['author']['slug'],
+                  profileImage: authorData['author']['profile_image'],
+                ))
+            .toList();
+
+        // Extract tags from the nested response
+        final tags = (article['article_tags'] as List<dynamic>)
+            .map((tagData) => Tag(
+                  id: tagData['tag']['id'],
+                  name: tagData['tag']['name'],
+                  slug: tagData['tag']['slug'],
+                  description: tagData['tag']['description'],
+                ))
+            .toList();
+
+        // Get vote counts and user vote
         final voteCounts = await _votingRepository.getVoteCounts(
-          entityId: post['id'].toString(),
+          entityId: article['id'].toString(),
           entityType: EntityType.article,
         );
 
         final userVote = await _votingRepository.getUserVote(
-          entityId: post['id'].toString(),
+          entityId: article['id'].toString(),
           entityType: EntityType.article,
         );
 
         return NewsArticle(
-          id: post['id'].toString(),
-          title: post['title'],
-          description: post['description'] ?? '',
-          author: post['author'] ?? 'Amaravati Chamber',
-          publishedAt: DateTime.parse(post['published_at']),
-          imageUrl: post['image_url'] ?? '',
-          htmlContent: post['html_content'] ?? '',
+          id: article['id'].toString(),
+          ghostId: article['ghost_id'],
+          title: article['title'],
+          description: article['description'] ?? '',
+          htmlContent: article['html_content'],
+          publishedAt: DateTime.parse(article['published_at']),
+          imageUrl: article['image_url'] ?? '',
+          slug: article['slug'],
+          createdAt: DateTime.parse(article['created_at']),
+          updatedAt: DateTime.parse(article['updated_at']),
+          authors: authors,
+          tags: tags,
           upvotes: voteCounts.fold(
             (l) => 0,
             (r) => r['upvotes'] ?? 0,

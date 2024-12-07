@@ -1,24 +1,26 @@
-// /amaravati_chamber/lib/features/news/data/models/article_model.dart
-
 class ArticleModel {
   final String id;
   final String title;
   final String description;
-  final String author;
+  final String htmlContent;
   final DateTime publishedAt;
   final String imageUrl;
-  final String htmlContent;
   final String slug;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String ghostId; // New field to match Supabase schema
 
   ArticleModel({
     required this.id,
     required this.title,
     required this.description,
-    required this.author,
+    required this.htmlContent,
     required this.publishedAt,
     required this.imageUrl,
-    required this.htmlContent,
     required this.slug,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.ghostId,
   });
 
   factory ArticleModel.fromJson(Map<String, dynamic> json) {
@@ -26,11 +28,13 @@ class ArticleModel {
       id: json['id'] as String,
       title: json['title'] as String,
       description: json['description'] as String? ?? '',
-      author: json['author'] as String? ?? '',
+      htmlContent: json['html_content'] as String,
       publishedAt: DateTime.parse(json['published_at'] as String),
       imageUrl: json['image_url'] as String? ?? '',
-      htmlContent: json['html_content'] as String? ?? '',
-      slug: json['slug'] as String? ?? '',
+      slug: json['slug'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+      ghostId: json['ghost_id'] as String,
     );
   }
 }
