@@ -152,11 +152,22 @@ BEGIN
     RETURN NEW;
 END;
 $$ language 'plpgsql';
+-- Enable UUID extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Articles table
+-- Create timestamp update function
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Articles table (main table)
 CREATE TABLE IF NOT EXISTS articles (
-    id UUID PRIMARY KEY,
-    ghost_id TEXT NOT NULL,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    ghost_id TEXT UNIQUE NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
     html_content TEXT NOT NULL,
@@ -167,23 +178,10 @@ CREATE TABLE IF NOT EXISTS articles (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Article tags table with foreign key to articles
-CREATE TABLE IF NOT EXISTS article_tags (
-    id UUID PRIMARY KEY,
-    article_id UUID REFERENCES articles(id),
-    ghost_id TEXT NOT NULL,
-    name TEXT NOT NULL,
-    slug TEXT NOT NULL,
-    description TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Article authors table with foreign key to articles
-CREATE TABLE IF NOT EXISTS article_authors (
-    id UUID PRIMARY KEY,
-    article_id UUID REFERENCES articles(id),
-    ghost_id TEXT NOT NULL,
+-- Authors reference table
+CREATE TABLE IF NOT EXISTS authors (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    ghost_id TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     slug TEXT NOT NULL,
     email TEXT,
@@ -192,14 +190,48 @@ CREATE TABLE IF NOT EXISTS article_authors (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create triggers for updating the updated_at timestamp
+-- Tags reference table
+CREATE TABLE IF NOT EXISTS tags (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    ghost_id TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Junction table for articles and authors
+CREATE TABLE IF NOT EXISTS article_authors (
+    article_id UUID REFERENCES articles(id) ON DELETE CASCADE,
+    author_id UUID REFERENCES authors(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (article_id, author_id)
+);
+
+-- Junction table for articles and tags
+CREATE TABLE IF NOT EXISTS article_tags (
+    article_id UUID REFERENCES articles(id) ON DELETE CASCADE,
+    tag_id UUID REFERENCES tags(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (article_id, tag_id)
+);
+
+-- Create triggers for updating timestamps
 CREATE TRIGGER update_articles_updated_at
     BEFORE UPDATE ON articles
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_article_tags_updated_at
-    BEFORE UPDATE ON article_tags
+CREATE TRIGGER update_authors_updated_at
+    BEFORE UPDATE ON authors
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_tags_updated_at
+    BEFORE UPDATE ON tags
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
@@ -208,32 +240,36 @@ CREATE TRIGGER update_article_authors_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Enable Row Level Security (RLS)
+CREATE TRIGGER update_article_tags_updated_at
+    BEFORE UPDATE ON article_tags
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_articles_ghost_id ON articles(ghost_id);
+CREATE INDEX IF NOT EXISTS idx_articles_slug ON articles(slug);
+CREATE INDEX IF NOT EXISTS idx_authors_ghost_id ON authors(ghost_id);
+CREATE INDEX IF NOT EXISTS idx_tags_ghost_id ON tags(ghost_id);
+
+-- Enable Row Level Security
 ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE article_tags ENABLE ROW LEVEL SECURITY;
+ALTER TABLE authors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE article_authors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE article_tags ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for public read access
 CREATE POLICY "Public read access for articles"
-    ON articles
-    FOR SELECT
-    TO public
-    USING (true);
+    ON articles FOR SELECT TO public USING (true);
 
-CREATE POLICY "Public read access for article_tags"
-    ON article_tags
-    FOR SELECT
-    TO public
-    USING (true);
+CREATE POLICY "Public read access for authors"
+    ON authors FOR SELECT TO public USING (true);
+
+CREATE POLICY "Public read access for tags"
+    ON tags FOR SELECT TO public USING (true);
 
 CREATE POLICY "Public read access for article_authors"
-    ON article_authors
-    FOR SELECT
-    TO public
-    USING (true);
+    ON article_authors FOR SELECT TO public USING (true);
 
--- Create indexes for better query performance
-CREATE INDEX IF NOT EXISTS idx_articles_ghost_id ON articles(ghost_id);
-CREATE INDEX IF NOT EXISTS idx_articles_slug ON articles(slug);
-CREATE INDEX IF NOT EXISTS idx_article_tags_article_id ON article_tags(article_id);
-CREATE INDEX IF NOT EXISTS idx_article_authors_article_id ON article_authors(article_id);
+CREATE POLICY "Public read access for article_tags"
+    ON article_tags FOR SELECT TO public USING (true);

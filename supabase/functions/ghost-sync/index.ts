@@ -190,30 +190,36 @@ async function processPost(
       throw new Error(errorText);
     }
 
-    // Handle existing relationships
-    if (exists) {
-      AppLogger.debug(`Cleaning up existing relationships`, { articleId });
-      await Promise.all([
-        fetch(`${supabaseUrl}/rest/v1/article_authors?article_id=eq.${articleId}`, {
-          method: 'DELETE',
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-          }
-        }),
-        fetch(`${supabaseUrl}/rest/v1/article_tags?article_id=eq.${articleId}`, {
-          method: 'DELETE',
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-          }
-        })
-      ]);
-    }
+    // Fetch existing relationships
+    const [existingAuthorsResponse, existingTagsResponse] = await Promise.all([
+      fetch(`${supabaseUrl}/rest/v1/article_authors?article_id=eq.${articleId}`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        }
+      }),
+      fetch(`${supabaseUrl}/rest/v1/article_tags?article_id=eq.${articleId}`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        }
+      })
+    ]);
 
-    // Create new relationships
+    const existingAuthors = await existingAuthorsResponse.json();
+    const existingTags = await existingTagsResponse.json();
+
+    // Filter authors and tags to create
+    const newAuthors = post.authors.filter(
+      author => !existingAuthors.some(existing => existing.ghost_id === author.id)
+    );
+    const newTags = post.tags.filter(
+      tag => !existingTags.some(existing => existing.ghost_id === tag.id)
+    );
+
+    // Create relationships for new authors and tags
     const relationshipPromises = [
-      ...post.authors.map(author =>
+      ...newAuthors.map(author =>
         fetch(`${supabaseUrl}/rest/v1/article_authors`, {
           method: 'POST',
           headers: {
@@ -232,7 +238,7 @@ async function processPost(
           })
         })
       ),
-      ...post.tags.map(tag =>
+      ...newTags.map(tag =>
         fetch(`${supabaseUrl}/rest/v1/article_tags`, {
           method: 'POST',
           headers: {
@@ -261,6 +267,7 @@ async function processPost(
     throw error;
   }
 }
+
 
 serve(async (req) => {
   const requestId = crypto.randomUUID();
