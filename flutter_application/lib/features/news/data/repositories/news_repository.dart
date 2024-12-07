@@ -46,6 +46,10 @@ class NewsRepository implements INewsRepository {
         query = query.ilike('title', '%$searchQuery%');
       }
 
+    if (tagFilter != null && tagFilter != 'All') {
+      query = query.eq('article_tags.tag.name', tagFilter);
+    }
+
       // Apply ordering and pagination
       final response = await query
           .order('published_at', ascending: false)

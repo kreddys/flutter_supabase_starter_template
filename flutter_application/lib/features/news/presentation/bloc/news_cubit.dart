@@ -28,49 +28,50 @@ class NewsCubit extends Cubit<NewsState> {
 
   String get selectedTag => _selectedTag;
 
-  Future<void> filterByTag(String tag) async {
-    AppLogger.info('Filtering articles by tag: $tag');
-    SentryMonitoring.addBreadcrumb(
-      message: 'Filtering articles by tag',
-      category: 'news',
-      data: {'tag': tag},
-    );
+Future<void> filterByTag(String tag) async {
+  AppLogger.info('Filtering articles by tag: $tag');
+  SentryMonitoring.addBreadcrumb(
+    message: 'Filtering articles by tag',
+    category: 'news',
+    data: {'tag': tag},
+  );
 
-    _selectedTag = tag;
-    emit(const NewsState.loading());
-    _currentPage = 1;
-    _hasMoreData = true;
-    _allArticles.clear();
+  _selectedTag = tag;
+  _currentPage = 1;
+  _hasMoreData = true;
+  _allArticles.clear();
+  
+  emit(const NewsState.loading());
 
-    final result = await _newsRepository.getNewsArticles(
-      page: _currentPage,
-      itemsPerPage: _itemsPerPage,
-      tagFilter: tag == 'All' ? null : tag,
-      searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
-    );
-    
-    result.fold(
-      (error) {
-        AppLogger.error('Failed to filter articles by tag: $error');
-        SentryMonitoring.captureException(
-          error,
-          StackTrace.current,
-          tagValue: 'tag_filter_failure',
-        );
-        emit(NewsState.error(error));
-      },
-      (articles) {
-        AppLogger.info('Successfully filtered ${articles.length} articles by tag');
-        _allArticles = articles;
-        _hasMoreData = articles.length >= _itemsPerPage;
-        emit(NewsState.loaded(
-          articles: articles,
-          isLoadingMore: false,
-          hasMoreData: _hasMoreData,
-        ));
-      },
-    );
-  }
+  final result = await _newsRepository.getNewsArticles(
+    page: _currentPage,
+    itemsPerPage: _itemsPerPage,
+    tagFilter: tag == 'All' ? null : tag,
+    searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
+  );
+  
+  result.fold(
+    (error) {
+      AppLogger.error('Failed to filter articles by tag: $error');
+      SentryMonitoring.captureException(
+        error,
+        StackTrace.current,
+        tagValue: 'tag_filter_failure',
+      );
+      emit(NewsState.error(error));
+    },
+    (articles) {
+      AppLogger.info('Successfully filtered ${articles.length} articles by tag');
+      _allArticles = articles;
+      _hasMoreData = articles.length >= _itemsPerPage;
+      emit(NewsState.loaded(
+        articles: articles,
+        isLoadingMore: false,
+        hasMoreData: _hasMoreData,
+      ));
+    },
+  );
+}
 
   Future<void> loadNews() async {
     AppLogger.info('Loading initial news articles');

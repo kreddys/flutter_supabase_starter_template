@@ -17,25 +17,30 @@ class NewsContent extends StatefulWidget {
 class _TagFilter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Get unique tags from all articles
-    final allTags = context.select((NewsCubit cubit) => 
-      cubit.state.maybeWhen(
-        loaded: (articles, _, __) {
-          final tags = {'All'};
-          for (var article in articles) {
-            tags.addAll(article.tags.map((t) => t.name));
-          }
-          return tags.toList()..sort();
-        },
-        orElse: () => ['All'],
-      )
-    );
-
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        children: allTags.map((tag) => _buildTagChip(context, tag)).toList(),
+      child: BlocBuilder<NewsCubit, NewsState>(
+        builder: (context, state) {
+          return Row(
+            children: [
+              _buildTagChip(context, 'All'),
+              ...state.maybeWhen(
+                loaded: (articles, _, __) {
+                  final selectedTag = context.read<NewsCubit>().selectedTag;
+                  return articles
+                      .expand((article) => article.tags)
+                      .map((tag) => tag.name)
+                      .toSet()
+                      .where((tag) => tag != selectedTag)
+                      .map((tag) => _buildTagChip(context, tag))
+                      .toList();
+                },
+                orElse: () => [],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
