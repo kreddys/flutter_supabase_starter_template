@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/bottom_navigation_bar/bottom_navigation_bar_cubit.dart';
+import '../bloc/bottom_navigation_bar/tab_item.dart';
 
 class HomeNavigationBar extends StatelessWidget {
   const HomeNavigationBar({

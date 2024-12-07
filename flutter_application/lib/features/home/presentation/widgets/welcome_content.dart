@@ -81,13 +81,43 @@ class _NewsHeader extends StatelessWidget {
 }
 
 class _FeaturedCategories extends StatelessWidget {
-  final List<Map<String, String>> categories = const [
-    {'title': 'Local News', 'icon': '📰'},
-    {'title': 'Government', 'icon': '🏛'},
-    {'title': 'Development', 'icon': '🏗'},
-    {'title': 'Education', 'icon': '📚'},
-    {'title': 'Culture', 'icon': '🎭'},
-    {'title': 'Events', 'icon': '📅'},
+  final List<Map<String, dynamic>> categories = const [
+    {
+      'title': 'News',
+      'icon': '📰',
+      'isActive': true,
+      'isNews': true,
+    },
+    {
+      'title': 'Business',
+      'icon': '🏢',
+      'isActive': true,
+      'isNews': false,
+    },
+    {
+      'title': 'Development',
+      'icon': '🏗',
+      'isActive': false,
+      'isNews': true,
+    },
+    {
+      'title': 'Education',
+      'icon': '📚',
+      'isActive': false,
+      'isNews': true,
+    },
+    {
+      'title': 'Culture',
+      'icon': '🎭',
+      'isActive': false,
+      'isNews': true,
+    },
+    {
+      'title': 'Events',
+      'icon': '📅',
+      'isActive': false,
+      'isNews': true,
+    },
   ];
 
   @override
@@ -110,30 +140,52 @@ class _FeaturedCategories extends StatelessWidget {
           ),
           itemCount: categories.length,
           itemBuilder: (context, index) {
+            final category = categories[index];
+            final isActive = category['isActive'] as bool;
+
             return Card(
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
                 side: BorderSide(
-                  color: Theme.of(context).dividerColor,
+                  color: isActive 
+                      ? Theme.of(context).primaryColor
+                      : Theme.of(context).dividerColor,
                 ),
               ),
               child: InkWell(
                 borderRadius: BorderRadius.circular(8),
-                onTap: () {
-                  context.read<BottomNavigationBarCubit>().switchTab(1);
-                },
+                onTap: isActive ? () {
+                  final cubit = context.read<BottomNavigationBarCubit>();
+                  if (isActive) {
+                    // Set the tab type (News/Business) before switching
+                    cubit
+                      ..emit(cubit.state.copyWith(
+                        isNewsSelected: category['isNews'] as bool,
+                      ))
+                      ..switchTab(1);
+                  }
+                } : null,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      categories[index]['icon']!,
-                      style: const TextStyle(fontSize: 24),
+                      category['icon'] as String,
+                      style: TextStyle(
+                        fontSize: 24,
+                        color: isActive ? null : Colors.grey,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      categories[index]['title']!,
-                      style: context.textTheme.bodySmall,
+                      isActive 
+                          ? category['title'] as String
+                          : 'Coming Soon',
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: isActive 
+                            ? null 
+                            : Colors.grey,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ],

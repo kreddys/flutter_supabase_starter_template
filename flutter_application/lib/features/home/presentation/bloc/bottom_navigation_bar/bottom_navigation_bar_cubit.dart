@@ -8,6 +8,8 @@ import 'package:meta/meta.dart';
 import 'package:amaravati_chamber/features/news/presentation/widgets/news_content.dart';
 import '../../../../../core/logging/app_logger.dart';
 import '../../../../../core/monitoring/sentry_monitoring.dart';
+import 'package:amaravati_chamber/features/business_listings/presentation/pages/business_listings_page.dart';
+import './tab_item.dart';
 
 part 'bottom_navigation_bar_state.dart';
 
@@ -30,5 +32,9 @@ class BottomNavigationBarCubit extends Cubit<BottomNavigationBarState> {
     );
     
     emit(state.copyWith(selectedIndex: index));
+  }
+
+  void toggleSecondTab() {
+    emit(state.copyWith(isNewsSelected: !state.isNewsSelected));
   }
 }

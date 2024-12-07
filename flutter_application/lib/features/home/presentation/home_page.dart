@@ -47,10 +47,35 @@ class HomePage extends StatelessWidget {
         builder: (context, state) {
           return Scaffold(
             body: SafeArea(
-              child: Stack(
-                children: [
-                  state.tabs[state.selectedIndex].content,
-                ],
+              child: GestureDetector(
+                onHorizontalDragEnd: (DragEndDetails details) {
+                  if (details.primaryVelocity == null) return;
+                  
+                  final cubit = context.read<BottomNavigationBarCubit>();
+                  final currentIndex = state.selectedIndex;
+
+                  // Swipe from left to right (positive velocity)
+                  if (details.primaryVelocity! > 0) {
+                    if (currentIndex == 2) { // If on settings page
+                      cubit.switchTab(1); // Go to middle page
+                    } else if (currentIndex == 1) { // If on middle page
+                      cubit.switchTab(0); // Go to home page
+                    }
+                  }
+                  // Swipe from right to left (negative velocity)
+                  else if (details.primaryVelocity! < 0) {
+                    if (currentIndex == 0) { // If on home page
+                      cubit.switchTab(1); // Go to middle page
+                    } else if (currentIndex == 1) { // If on middle page
+                      cubit.switchTab(2); // Go to settings page
+                    }
+                  }
+                },
+                child: Stack(
+                  children: [
+                    state.tabs[state.selectedIndex].content,
+                  ],
+                ),
               ),
             ),
             bottomNavigationBar: HomeNavigationBar(

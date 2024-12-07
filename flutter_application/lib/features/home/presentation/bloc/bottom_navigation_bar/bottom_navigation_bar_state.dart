@@ -4,21 +4,26 @@ part of 'bottom_navigation_bar_cubit.dart';
 class BottomNavigationBarState extends Equatable {
   BottomNavigationBarState({
     this.selectedIndex = 0,
+    this.isNewsSelected = true,  // Add this for dynamic second tab
   });
 
   final int selectedIndex;
-  final tabs = <TabItem>[
+  final bool isNewsSelected;
+
+  List<TabItem> get tabs => [
     const TabItem(
       label: "Home",
       icon: Icons.home,
       tooltip: "Home",
       content: WelcomeContent(),
     ),
-    const TabItem(
-      tooltip: 'News',
-      label: 'News',
-      icon: Icons.newspaper,
-      content: NewsContent(),
+    TabItem(
+      tooltip: isNewsSelected ? 'News' : 'Business',
+      label: isNewsSelected ? 'News' : 'Business',
+      icon: isNewsSelected ? Icons.newspaper : Icons.business,
+      content: isNewsSelected 
+          ? const NewsContent()
+          : const BusinessListingsPage(),
     ),    
     const TabItem(
       label: "Settings",
@@ -28,29 +33,16 @@ class BottomNavigationBarState extends Equatable {
     ),
   ];
 
-  BottomNavigationBarState copyWith({int? selectedIndex}) {
+  BottomNavigationBarState copyWith({
+    int? selectedIndex,
+    bool? isNewsSelected,
+  }) {
     return BottomNavigationBarState(
       selectedIndex: selectedIndex ?? this.selectedIndex,
+      isNewsSelected: isNewsSelected ?? this.isNewsSelected,
     );
   }
 
   @override
-  List<Object?> get props => [
-        selectedIndex,
-        tabs,
-      ];
-}
-
-class TabItem {
-  const TabItem({
-    required this.tooltip,
-    required this.label,
-    required this.icon,
-    required this.content,
-  });
-
-  final IconData icon;
-  final String label;
-  final String tooltip;
-  final Widget content;
+  List<Object?> get props => [selectedIndex, isNewsSelected, tabs];
 }
