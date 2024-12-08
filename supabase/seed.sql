@@ -1,148 +1,5 @@
-create type vote_type as enum ('upvote', 'downvote');
-create type entity_type as enum ('article', 'comment', 'event'); -- add more types as needed
-
-create table votes (
-  id uuid default uuid_generate_v4() primary key,
-  entity_type entity_type not null,
-  entity_id uuid not null,
-  user_id uuid references auth.users(id) on delete cascade not null,
-  vote_type vote_type not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  -- Composite unique constraint to prevent multiple votes on same entity by same user
-  unique(entity_type, entity_id, user_id)
-);
-
--- Add RLS policies
-alter table votes enable row level security;
-
-create policy "Users can manage their own votes"
-  on votes for all
-  using (auth.uid() = user_id);
-
--- Create an update trigger for updated_at
-create or replace function update_updated_at_column()
-returns trigger as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$ language plpgsql;
-
-create trigger update_votes_updated_at
-  before update on votes
-  for each row
-  execute function update_updated_at_column();
-
--- Create role enum
-create type user_role as enum ('user', 'admin', 'moderator');
-
--- Create user_roles table
-create table user_roles (
-    id uuid default uuid_generate_v4() primary key,
-    user_id uuid references auth.users(id) on delete cascade not null,
-    role user_role default 'user'::user_role not null,
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-    updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
-    unique(user_id, role)
-);
-
--- Add RLS policies
-alter table user_roles enable row level security;
-
--- Users can view their own roles
-create policy "Users can view their own roles"
-    on user_roles for select
-    using (auth.uid() = user_id);
-
--- Create updated_at trigger
-create trigger update_user_roles_updated_at
-    before update on user_roles
-    for each row
-    execute function update_updated_at_column();
-
--- Create index
-create index user_roles_user_id_idx on user_roles(user_id);
-
--- Create enum for business status
-create type business_status as enum ('pending', 'approved', 'rejected');
-
--- Create businesses table
-create table businesses (
-    id uuid default uuid_generate_v4() primary key,
-    name text not null,
-    description text,
-    category text not null,
-    address text,
-    phone text,
-    email text,
-    website text,
-    rating decimal(3,2) default 0.0,
-    is_verified boolean default false,
-    is_member boolean default false,
-    images text[], -- Array of image URLs
-    location point, -- For storing latitude and longitude
-    operating_hours text,
-    is_open boolean default false,
-    status business_status default 'pending',
-    owner_id uuid references auth.users(id) on delete cascade,
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-    updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- Add RLS policies
-alter table businesses enable row level security;
-
--- Policy for reading businesses (public access)
-create policy "Anyone can view approved businesses"
-    on businesses for select
-    using (status = 'approved');
-
--- Policy for business owners to manage their listings
-create policy "Business owners can manage their own listings"
-    on businesses for all
-    using (auth.uid() = owner_id);
-
--- Create updated_at trigger
-create trigger update_businesses_updated_at
-    before update on businesses
-    for each row
-    execute function update_updated_at_column();
-
--- Create index for common queries
-create index businesses_category_idx on businesses(category);
-create index businesses_status_idx on businesses(status);
-create index businesses_owner_id_idx on businesses(owner_id);
-
--- Create a base admin role check function
-create or replace function is_admin()
-returns boolean as $$
-begin
-  return exists (
-    select 1 
-    from user_roles 
-    where user_id = auth.uid() 
-    and role = 'admin'
-  );
-end;
-$$ language plpgsql security definer;
-
--- Now create new policies using the function
-create policy "Admins can manage all businesses"
-on businesses for all
-using (
-  is_admin()
-  or auth.uid() = owner_id -- Allow business owners to manage their own
-);
-
-create policy "Admins can manage roles"
-on user_roles for all
-using (is_admin());
-
--- Add a public read policy for businesses if needed
-create policy "Anyone can view businesses"
-on businesses for select
-using (true);
+-- Enable UUID extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Create a function to automatically update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -151,20 +8,168 @@ BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
-$$ language 'plpgsql';
--- Enable UUID extension if not already enabled
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+$$ LANGUAGE plpgsql;
 
--- Create timestamp update function
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+-- Create enums
+CREATE TYPE vote_type AS ENUM ('upvote', 'downvote');
+CREATE TYPE entity_type AS ENUM ('article', 'comment', 'event'); -- Add more types as needed
+CREATE TYPE user_role AS ENUM ('user', 'admin', 'moderator');
+CREATE TYPE business_status AS ENUM ('pending', 'approved', 'rejected');
+
+-- Votes table
+CREATE TABLE IF NOT EXISTS votes (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    entity_type entity_type NOT NULL,
+    entity_id UUID NOT NULL,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    vote_type vote_type NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    UNIQUE(entity_type, entity_id, user_id)
+);
+
+-- Votes table RLS policies
+ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own votes"
+    ON votes FOR ALL
+    USING (auth.uid() = user_id);
+
+CREATE TRIGGER update_votes_updated_at
+    BEFORE UPDATE ON votes
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- User Roles table
+CREATE TABLE IF NOT EXISTS user_roles (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    role user_role DEFAULT 'user'::user_role NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    UNIQUE(user_id, role)
+);
+
+-- User Roles table RLS policies
+ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own roles"
+    ON user_roles FOR SELECT
+    USING (auth.uid() = user_id);
+
+CREATE TRIGGER update_user_roles_updated_at
+    BEFORE UPDATE ON user_roles
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE INDEX IF NOT EXISTS user_roles_user_id_idx ON user_roles(user_id);
+
+-- Businesses Categories table
+CREATE TABLE IF NOT EXISTS business_categories (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE TRIGGER update_business_categories_updated_at
+    BEFORE UPDATE ON business_categories
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TABLE IF NOT EXISTS businesses (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    address TEXT,
+    phone TEXT,
+    email TEXT,
+    website TEXT,
+    rating DECIMAL(3, 2) DEFAULT 0.0,
+    is_verified BOOLEAN DEFAULT FALSE,
+    is_member BOOLEAN DEFAULT FALSE,
+    images TEXT[], -- Array of image URLs
+    location POINT, -- For latitude and longitude
+    operating_hours TEXT,
+    is_open BOOLEAN DEFAULT FALSE,
+    status business_status DEFAULT 'pending',
+    owner_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+-- Modify the `owner_id` column to allow NULL values
+ALTER TABLE businesses
+ALTER COLUMN owner_id DROP NOT NULL;
+
+
+CREATE TRIGGER update_businesses_updated_at
+    BEFORE UPDATE ON businesses
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Junction table for businesses and categories
+CREATE TABLE IF NOT EXISTS business_category_mappings (
+    business_id UUID REFERENCES businesses(id) ON DELETE CASCADE,
+    category_id UUID REFERENCES business_categories(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    PRIMARY KEY (business_id, category_id)
+);
+
+CREATE TRIGGER update_business_category_mappings_updated_at
+    BEFORE UPDATE ON business_category_mappings
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- RLS policies for Businesses and Categories
+ALTER TABLE businesses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE business_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE business_category_mappings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view approved businesses"
+    ON businesses FOR SELECT
+    USING (status = 'approved');
+
+CREATE POLICY "Business owners can manage their own listings"
+    ON businesses FOR ALL
+    USING (auth.uid() = owner_id);
+
+CREATE POLICY "Admins can manage all businesses"
+    ON businesses FOR ALL
+    USING (is_admin() OR auth.uid() = owner_id);
+
+CREATE POLICY "Anyone can view categories"
+    ON business_categories FOR SELECT
+    USING (true);
+
+CREATE POLICY "Admins can manage categories"
+    ON business_categories FOR ALL
+    USING (is_admin());
+
+CREATE POLICY "Anyone can view business-category mappings"
+    ON business_category_mappings FOR SELECT
+    USING (true);
+
+CREATE POLICY "Admins can manage business-category mappings"
+    ON business_category_mappings FOR ALL
+    USING (is_admin());
+
+-- Admin role check function
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN AS $$
 BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
+    RETURN EXISTS (
+        SELECT 1 
+        FROM user_roles 
+        WHERE user_id = auth.uid() 
+        AND role = 'admin'
+    );
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Articles table (main table)
+-- Articles, Authors, and Tags tables
 CREATE TABLE IF NOT EXISTS articles (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     ghost_id TEXT UNIQUE NOT NULL,
@@ -178,7 +183,6 @@ CREATE TABLE IF NOT EXISTS articles (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Authors reference table
 CREATE TABLE IF NOT EXISTS authors (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     ghost_id TEXT UNIQUE NOT NULL,
@@ -190,7 +194,6 @@ CREATE TABLE IF NOT EXISTS authors (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tags reference table
 CREATE TABLE IF NOT EXISTS tags (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     ghost_id TEXT UNIQUE NOT NULL,
@@ -201,7 +204,6 @@ CREATE TABLE IF NOT EXISTS tags (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Junction table for articles and authors
 CREATE TABLE IF NOT EXISTS article_authors (
     article_id UUID REFERENCES articles(id) ON DELETE CASCADE,
     author_id UUID REFERENCES authors(id) ON DELETE CASCADE,
@@ -210,7 +212,6 @@ CREATE TABLE IF NOT EXISTS article_authors (
     PRIMARY KEY (article_id, author_id)
 );
 
--- Junction table for articles and tags
 CREATE TABLE IF NOT EXISTS article_tags (
     article_id UUID REFERENCES articles(id) ON DELETE CASCADE,
     tag_id UUID REFERENCES tags(id) ON DELETE CASCADE,
@@ -219,7 +220,7 @@ CREATE TABLE IF NOT EXISTS article_tags (
     PRIMARY KEY (article_id, tag_id)
 );
 
--- Create triggers for updating timestamps
+-- Timestamp triggers for articles, authors, and tags
 CREATE TRIGGER update_articles_updated_at
     BEFORE UPDATE ON articles
     FOR EACH ROW
@@ -245,31 +246,38 @@ CREATE TRIGGER update_article_tags_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Create indexes for better performance
+-- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_articles_ghost_id ON articles(ghost_id);
 CREATE INDEX IF NOT EXISTS idx_articles_slug ON articles(slug);
 CREATE INDEX IF NOT EXISTS idx_authors_ghost_id ON authors(ghost_id);
 CREATE INDEX IF NOT EXISTS idx_tags_ghost_id ON tags(ghost_id);
+CREATE INDEX IF NOT EXISTS businesses_category_idx ON businesses(name);
+CREATE INDEX IF NOT EXISTS business_categories_name_idx ON business_categories(name);
+CREATE INDEX IF NOT EXISTS business_category_mappings_idx ON business_category_mappings(business_id, category_id);
 
--- Enable Row Level Security
+-- RLS policies
 ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE authors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE article_authors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE article_tags ENABLE ROW LEVEL SECURITY;
 
--- Create policies for public read access
 CREATE POLICY "Public read access for articles"
-    ON articles FOR SELECT TO public USING (true);
+    ON articles FOR SELECT TO public
+    USING (true);
 
 CREATE POLICY "Public read access for authors"
-    ON authors FOR SELECT TO public USING (true);
+    ON authors FOR SELECT TO public
+    USING (true);
 
 CREATE POLICY "Public read access for tags"
-    ON tags FOR SELECT TO public USING (true);
+    ON tags FOR SELECT TO public
+    USING (true);
 
 CREATE POLICY "Public read access for article_authors"
-    ON article_authors FOR SELECT TO public USING (true);
+    ON article_authors FOR SELECT TO public
+    USING (true);
 
 CREATE POLICY "Public read access for article_tags"
-    ON article_tags FOR SELECT TO public USING (true);
+    ON article_tags FOR SELECT TO public
+    USING (true);
