@@ -24,6 +24,14 @@ Future<Either<String, List<NewsArticle>>> getNewsArticles({
   try {
     final offset = (page - 1) * itemsPerPage;
     
+    AppLogger.debug('Fetching articles with parameters:');
+    AppLogger.debug('Page: $page');
+    AppLogger.debug('Items per page: $itemsPerPage');
+    AppLogger.debug('Search query: $searchQuery');
+    AppLogger.debug('Tag filter: $tagFilter');
+    AppLogger.debug('Offset: $offset');
+
+    // Build the base query
     var query = _supabaseClient
         .from('articles')
         .select('''
@@ -32,21 +40,28 @@ Future<Either<String, List<NewsArticle>>> getNewsArticles({
             author:authors(*)
           ),
           article_tags!inner(
-            tag:tags(*)
+            tag:tags!inner(*)
           )
         ''');
 
+    // Apply search filter if provided
     if (searchQuery != null && searchQuery.isNotEmpty) {
-      query = query.ilike('title', '%$searchQuery%');
+      query = query.like('title', '%$searchQuery%'); // Changed from ilike to like
+      AppLogger.debug('Applied search filter: $searchQuery');
     }
 
+    // Apply tag filter if provided
     if (tagFilter != null && tagFilter != 'All') {
-      query = query.eq('article_tags.tag.name', tagFilter);
+      query = query.eq('article_tags.tag.name', tagFilter); // Using eq instead of filter
+      AppLogger.debug('Applied tag filter: $tagFilter');
     }
 
+    // Execute the query with pagination and ordering
     final response = await query
         .order('published_at', ascending: false)
         .range(offset, offset + itemsPerPage - 1);
+    
+    AppLogger.debug('Number of articles retrieved: ${response?.length ?? 0}');
 
     if (response == null) {
       AppLogger.error('Null response from Supabase');

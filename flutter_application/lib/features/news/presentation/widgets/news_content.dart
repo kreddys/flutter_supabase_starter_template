@@ -22,22 +22,17 @@ class _TagFilter extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: BlocBuilder<NewsCubit, NewsState>(
         builder: (context, state) {
+          final newsCubit = context.read<NewsCubit>();
+          final selectedTag = newsCubit.selectedTag;
+          
+          // Use the stored tags instead of deriving from current articles
           return Row(
             children: [
               _buildTagChip(context, 'All'),
-              ...state.maybeWhen(
-                loaded: (articles, _, __) {
-                  final selectedTag = context.read<NewsCubit>().selectedTag;
-                  return articles
-                      .expand((article) => article.tags)
-                      .map((tag) => tag.name)
-                      .toSet()
-                      .where((tag) => tag != selectedTag)
-                      .map((tag) => _buildTagChip(context, tag))
-                      .toList();
-                },
-                orElse: () => [],
-              ),
+              ...newsCubit.allTags
+                  .where((tag) => tag != 'All' && tag != selectedTag)
+                  .map((tag) => _buildTagChip(context, tag))
+                  .toList(),
             ],
           );
         },

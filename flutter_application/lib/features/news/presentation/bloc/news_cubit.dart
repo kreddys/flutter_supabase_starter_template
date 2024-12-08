@@ -28,6 +28,10 @@ class NewsCubit extends Cubit<NewsState> {
 
   String get selectedTag => _selectedTag;
 
+  Set<String> _allTags = {'All'};
+
+  Set<String> get allTags => _allTags;
+
 Future<void> filterByTag(String tag) async {
   AppLogger.info('Filtering articles by tag: $tag');
   SentryMonitoring.addBreadcrumb(
@@ -61,15 +65,16 @@ Future<void> filterByTag(String tag) async {
       emit(NewsState.error(error));
     },
     (articles) {
-      AppLogger.info('Successfully filtered ${articles.length} articles by tag');
-      _allArticles = articles;
-      _hasMoreData = articles.length >= _itemsPerPage;
-      emit(NewsState.loaded(
-        articles: articles,
-        isLoadingMore: false,
-        hasMoreData: _hasMoreData,
-      ));
-    },
+        // Update all tags when loading initial articles
+        _allTags = {'All', ...articles.expand((article) => article.tags).map((tag) => tag.name)};
+        _allArticles = articles;
+        _hasMoreData = articles.length >= _itemsPerPage;
+        emit(NewsState.loaded(
+          articles: articles,
+          isLoadingMore: false,
+          hasMoreData: _hasMoreData,
+        ));
+      },
   );
 }
 
@@ -200,52 +205,53 @@ Future<void> filterByTag(String tag) async {
     ));
   }
 
-  Future<void> searchAllArticles(String query) async {
-    AppLogger.info('Performing API search with query: "$query"');
-    SentryMonitoring.addBreadcrumb(
-      message: 'Searching articles',
-      category: 'news',
-      data: {'query': query},
-    );
+Future<void> searchAllArticles(String query) async {
+  AppLogger.info('Performing API search with query: "$query"');
+  SentryMonitoring.addBreadcrumb(
+    message: 'Searching articles',
+    category: 'news',
+    data: {'query': query},
+  );
 
-    _searchQuery = query;
+  _searchQuery = query;
 
-    if (query.isEmpty) {
-      AppLogger.debug('Empty search query, loading all articles');
-      await loadNews();
-      return;
-    }
-
-    emit(const NewsState.loading());
-    
-    final result = await _newsRepository.getNewsArticles(
-      page: 1,
-      itemsPerPage: 999999,
-      searchQuery: query,
-      tagFilter: _selectedTag == 'All' ? null : _selectedTag,
-    );
-    
-    result.fold(
-      (error) {
-        AppLogger.error('Search failed: $error');
-        SentryMonitoring.captureException(
-          error,
-          StackTrace.current,
-          tagValue: 'search_articles_failure',
-        );
-        emit(NewsState.error(error));
-      },
-      (articles) {
-        AppLogger.info('Search completed with ${articles.length} results');
-        _searchResults = articles;
-        emit(NewsState.loaded(
-          articles: articles,
-          isLoadingMore: false,
-          hasMoreData: false,
-        ));
-      },
-    );
+  if (query.isEmpty) {
+    AppLogger.debug('Empty search query, loading all articles');
+    await loadNews();
+    return;
   }
+
+  emit(const NewsState.loading());
+  
+  final result = await _newsRepository.getNewsArticles(
+    page: 1,
+    itemsPerPage: 999999,
+    searchQuery: query,
+    tagFilter: _selectedTag == 'All' ? null : _selectedTag,
+  );
+  
+  result.fold(
+    (error) {
+      AppLogger.error('Search failed: $error');
+      SentryMonitoring.captureException(
+        error,
+        StackTrace.current,
+        tagValue: 'search_articles_failure',
+      );
+      emit(NewsState.error(error));
+    },
+    (articles) {
+      AppLogger.info('Search completed with ${articles.length} results');
+      _searchResults = articles;
+      // Don't update _allTags here to preserve the complete tag list
+      emit(NewsState.loaded(
+        articles: articles,
+        isLoadingMore: false,
+        hasMoreData: false,
+      ));
+    },
+  );
+}
 
   Future<void> updateVoteAndRefresh({
     required String articleId,
