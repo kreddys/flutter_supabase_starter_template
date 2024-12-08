@@ -41,7 +41,7 @@ Future<Either<String, List<NewsArticle>>> getNewsArticles({
     }
 
     if (tagFilter != null && tagFilter != 'All') {
-      query = query.eq('article_tags.tags.name', tagFilter);
+      query = query.eq('article_tags.tag.name', tagFilter);
     }
 
     final response = await query
@@ -53,7 +53,7 @@ Future<Either<String, List<NewsArticle>>> getNewsArticles({
       return const Left('Error: No data received from server');
     }
 
-    AppLogger.debug('Raw response from Supabase: $response');
+    //AppLogger.debug('Raw response from Supabase: $response');
 
     final articles = await Future.wait((response as List<dynamic>).map((article) async {
       // Add null checks for article_authors and article_tags
