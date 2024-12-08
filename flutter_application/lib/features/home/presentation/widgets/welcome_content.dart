@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:amaravati_chamber/core/constants/spacings.dart';
 import 'package:amaravati_chamber/core/extensions/build_context_extensions.dart';
 import 'package:amaravati_chamber/features/home/presentation/bloc/bottom_navigation_bar/bottom_navigation_bar_cubit.dart';
-import 'package:amaravati_chamber/core/monitoring/sentry_monitoring.dart';
 
 class WelcomeContent extends StatelessWidget {
   const WelcomeContent({

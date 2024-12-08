@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:amaravati_chamber/core/constants/spacings.dart';
 
 class BaseTextField extends StatelessWidget {
   const BaseTextField({

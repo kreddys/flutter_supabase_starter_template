@@ -6,6 +6,7 @@ import '../../../../core/voting/domain/repositories/i_voting_repository.dart';
 import '../widgets/article_detail_screen.dart';
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/monitoring/sentry_monitoring.dart';
+import '../../../../core/widgets/content_card.dart';
 
 class NewsArticleCard extends StatelessWidget {
   final NewsArticle article;
@@ -23,23 +24,19 @@ class NewsArticleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 16.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Theme.of(context).dividerColor),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _navigateToArticleDetail(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildArticleImage(context),
-            _buildArticleCardContent(context),
-          ],
-        ),
+    return ContentCard(
+      title: article.title,
+      description: article.description,
+      imageUrl: article.imageUrl,
+      date: article.publishedAt,
+      tags: article.tags.map((tag) => tag.name).toList(),
+      onTap: () => _navigateToArticleDetail(context),
+      footer: VoteButtons(
+        entityId: article.id,
+        userVote: article.userVote,
+        upvotes: article.upvotes,
+        downvotes: article.downvotes,
+        onVote: (voteType) => onVote(article.id, voteType),
       ),
     );
   }

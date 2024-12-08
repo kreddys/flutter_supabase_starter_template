@@ -1,6 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:injectable/injectable.dart';
-import 'package:hive/hive.dart';
 
 @module
 abstract class AppModule {

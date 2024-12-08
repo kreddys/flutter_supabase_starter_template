@@ -2,7 +2,6 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:amaravati_chamber/features/home/presentation/widgets/welcome_content.dart';
-import 'package:amaravati_chamber/features/settings/presentation/page/settings_page.dart';
 import 'package:injectable/injectable.dart';
 import 'package:meta/meta.dart';
 import 'package:amaravati_chamber/features/news/presentation/widgets/news_content.dart';
