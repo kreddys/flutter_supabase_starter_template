@@ -165,36 +165,14 @@ class BusinessCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ContentCard(
       title: business.name,
-      description: business.description ?? 'No description available', // Provide a default value,
+      description: business.address ?? 'No description available', // Provide a default value,
       imageUrl: business.images.isNotEmpty ? business.images.first : null,
+      date: null,
       tags: business.categories, // Empty list to hide tags
       onTap: () {
         // TODO: Navigate to detailed business profile
       },
-      footer: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (business.isVerified == true)
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: Icon(
-                Icons.verified,
-                color: Theme.of(context).colorScheme.primary,
-                size: 16,
-              ),
-            ),
-          IconButton(
-            icon: const Icon(Icons.phone),
-            onPressed: () => launchUrl(Uri.parse('tel:${business.phone}')),
-          ),
-          IconButton(
-            icon: const Icon(Icons.location_on),
-            onPressed: () {
-              // TODO: Show location on map
-            },
-          ),
-        ],
-      ),
+      footer: null,
     );
   }
 }

@@ -111,18 +111,71 @@ const categoryMapping = {
   'manufacture_of_chemicals_and_chemical_products': 'Chemicals'
 };
 
+// Amaravati Capital Region Areas (adjust as necessary)
+const validAreas = [
+  'Amaravati', 'Amaravathi', 'Guntur', 'Mangalagiri', 'Vijayawada', 'Tenali',
+];
+const validDistricts = ['Guntur', 'Krishna'];
+
+const validZipCodes = ['520001','520002','520003','520004','520007','520008','520010','520011','520012','520013','520015','521001','521002','521101','521102','521104','521105','521106','521107','521108','521109','521110','521111','521120','521121','521125','521126','521130','521131','521132','521133','521135','521136','521137','521138','521139','521148','521149','521150','521151','521153','521156','521157','521158','521162','521163','521164','521165','521170','521175','521178','521180','521181','521182','521183','521185','521190','521201','521207','521211','521212','521213','521214','521215','521225','521227','521228','521229','521230','521235','521241','521245','521246','521247','521250','521256','521260','521261','521263','521286','521301','521311','521312','521321','521322','521323','521324','521325','521326','521327','521328','521329','521330','521331','521332','521333','521340','521343','521345','521356','521366','521369','521390','521401','521402','521403','521444','521456','521457','522001','522002','522003','522004','522005','522006','522007','522009','522015','522016','522017','522018','522019','522020','522034','522101','522111','522112','522113','522124','522125','522201','522202','522211','522212','522213','522233','522234','522235','522236','522237','522256','522257','522258','522259','522261','522262','522264','522265','522268','522301','522302','522303','522304','522305','522306','522307','522308','522309','522310','522311','522312','522313','522314','522315','522316','522317','522318','522324','522325','522329','522330','522341','522401','522402','522403','522408','522409','522410','522411','522412','522413','522414','522415','522421','522426','522435','522436','522437','522438','522439','522501','522502','522503','522508','522509','522510','522529','522549','522601','522603','522611','522612','522613','522614','522615','522616','522617','522619','522626','522646','522647','522649','522657','522658','522659','522660','522661','522663'
+];
+
+// Helper function to check if an address matches the valid areas
+function isValidAddress(address) {
+  // Check for specific city names or districts in the address
+  const normalizedAddress = address.toLowerCase();
+  return validAreas.some(area => normalizedAddress.includes(area.toLowerCase())) ||
+    validDistricts.some(district => normalizedAddress.includes(district.toLowerCase()));
+}
+
+function isValidZipCode(address) {
+  const zipMatch = address.match(/\b\d{6}\b/);
+  if (zipMatch) {
+    //console.log(`Extracted Zip Code: ${zipMatch[0]} from Address: ${address}`);
+    return validZipCodes.includes(zipMatch[0]);
+  }
+  //console.log(`No zip code found in address: ${address}`);
+  return false;
+}
+
 // Function to process the updated CSV file and generate the desired output
 function processCSV() {
   fs.createReadStream(inputCSVPath)
     .pipe(csv())
     .on('data', (row) => {
+
+      //console.log(`Processing Business "${row.CompanyName}" with address "${row.Registered_Office_Address}"`);
       // Only include businesses marked as active (assuming 'CompanyStatus' is the column)
       if (row.CompanyStatus !== 'Active') {
+        //console.log(`Business is not active.`);
+        errors.push(`Business "${row.CompanyName}" with address "${row.Registered_Office_Address}" is not active.`);
         return; // Skip if the business is not active
       }
 
+      const address = row.Registered_Office_Address || '';
+      if (!isValidAddress(address) && !isValidZipCode(address)) {
+        //console.log(`Business is outside the Amaravati Capital Region.`);
+        errors.push(`Business "${row.CompanyName}" with address "${address}" is outside the Amaravati Capital Region.`);
+        return; // Skip businesses outside the valid area
+      }
+
+      //console.log(`Matching Business found`);
+
       // Create a unique business ID
       const businessId = uuidv4();
+
+      let isoDate;
+      if (row.CompanyRegistrationdate_date) {
+          const parsedDate = Date.parse(row.CompanyRegistrationdate_date);
+          if (isNaN(parsedDate)) {
+              console.log(`Invalid date for company: ${row.CompanyName}, Date: ${row.CompanyRegistrationdate_date}`);
+              isoDate = null; // or set to a default date like '1970-01-01T00:00:00.000Z'
+          } else {
+              isoDate = new Date(parsedDate).toISOString();
+          }
+      } else {
+          isoDate = null; // or use a default date
+      }
 
       // Add business data to the businesses array
       businesses.push({
@@ -140,9 +193,9 @@ function processCSV() {
         location: null, // Modify if you have location data
         operating_hours: null, // Modify if you have operating hours data
         is_open: false, // Default
-        status: 'pending', // Default
+        status: 'approved', // Default
         owner_id: null, // Can be updated later
-        created_at: new Date().toISOString(),
+        created_at: isoDate,
         updated_at: new Date().toISOString(),
       });
 
