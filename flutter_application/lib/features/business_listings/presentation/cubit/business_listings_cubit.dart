@@ -9,49 +9,49 @@ class BusinessListingsCubit extends Cubit<BusinessListingsState> {
 
   BusinessListingsCubit(this._supabaseClient) : super(const BusinessListingsState());
 
-  Future<void> loadBusinessListings() async {
-    try {
-      emit(state.copyWith(status: BusinessListingsStatus.loading));
-      
-      final response = await _supabaseClient
-          .from('businesses')
-          .select('''
-            *,
-            business_category_mappings!inner(
-              business_categories(name)
-            )
-          ''')
-          //.eq('status', 'approved')
-          .order('name');
+Future<void> loadBusinessListings() async {
+  try {
+    emit(state.copyWith(status: BusinessListingsStatus.loading));
+    
+    final response = await _supabaseClient
+        .from('businesses')
+        .select('''
+          *,
+          business_categories (
+            id,
+            name,
+            description
+          )
+        ''')
+        .eq('status', 'approved');
 
-          AppLogger.debug('Raw response from Supabase ${response.toString()}');
+    final List<dynamic> businessList = response as List;
+    final businesses = businessList.map((business) {
+      // Extract categories from the joined data
+      final categories = (business['business_categories'] as List?)
+          ?.map((category) => category['name'] as String)
+          .toList() ?? [];
 
-      final businesses = response.map((business) {
-        // Extract category names from the joined data
-        final categories = (business['business_category_mappings'] as List)
-            .map((mapping) => mapping['business_categories']['name'] as String)
-            .toList();
-            
-        return Business.fromJson({
-          ...business,
-          'categories': categories,
-        });
-      }).toList();
+      return Business.fromJson({
+        ...business,
+        'categories': categories,
+      });
+    }).toList();
 
-      emit(state.copyWith(
-        status: BusinessListingsStatus.success,
-        businesses: businesses,
-        filteredBusinesses: businesses,
-      ));
-    } catch (e, stackTrace) {
-      AppLogger.error('Error loading businesses', error: e, stackTrace: stackTrace);
-      SentryMonitoring.captureException(e, stackTrace);
-      emit(state.copyWith(
-        status: BusinessListingsStatus.failure,
-        errorMessage: 'Failed to load businesses',
-      ));
-    }
+    emit(state.copyWith(
+      status: BusinessListingsStatus.success,
+      businesses: businesses,
+      filteredBusinesses: businesses,
+    ));
+  } catch (e, stackTrace) {
+    AppLogger.error('Error loading businesses', error: e, stackTrace: stackTrace);
+    await SentryMonitoring.captureException(e, stackTrace);
+    emit(state.copyWith(
+      status: BusinessListingsStatus.failure,
+      errorMessage: 'Failed to load businesses',
+    ));
   }
+}
 
   Future<void> createBusiness(Business business) async {
     try {
@@ -157,29 +157,43 @@ class BusinessListingsCubit extends Cubit<BusinessListingsState> {
     }
   }
 
-  void searchBusinesses(String query) {
-    AppLogger.debug('Searching businesses', error: query);
-    final filteredList = state.businesses.where((business) {
-      return business.name.toLowerCase().contains(query.toLowerCase()) ||
-          business.description.toLowerCase().contains(query.toLowerCase()) ||
-          business.category.toLowerCase().contains(query.toLowerCase());
-    }).toList();
+void searchBusinesses(String query) {
+  AppLogger.debug('Searching businesses', error: query);
+  final filteredList = state.businesses.where((business) {
+    final nameMatch = business.name.toLowerCase().contains(query.toLowerCase());
+    final descriptionMatch = business.description?.toLowerCase().contains(query.toLowerCase()) ?? false;
+    final categoryMatch = business.categories.any(
+      (category) => category.toLowerCase().contains(query.toLowerCase())
+    );
+    
+    return nameMatch || descriptionMatch || categoryMatch;
+  }).toList();
 
-    emit(state.copyWith(
-      searchQuery: query,
-      filteredBusinesses: filteredList,
-    ));
-  }
+  emit(state.copyWith(
+    searchQuery: query,
+    filteredBusinesses: filteredList,
+  ));
+}
 
-  void filterByCategory(String category) {
-    AppLogger.debug('Filtering by category', error: category);
-    final filteredList = state.businesses.where((business) {
-      return business.category == category;
-    }).toList();
-
+void filterByCategory(String category) {
+  AppLogger.debug('Filtering by category', error: category);
+  
+  if (category == 'All') {
     emit(state.copyWith(
       selectedCategory: category,
-      filteredBusinesses: filteredList,
+      filteredBusinesses: state.businesses,
     ));
+    return;
   }
+
+  final filteredList = state.businesses.where((business) {
+    return business.categories.contains(category);
+  }).toList();
+
+  emit(state.copyWith(
+    selectedCategory: category,
+    filteredBusinesses: filteredList,
+  ));
+}
+
 }

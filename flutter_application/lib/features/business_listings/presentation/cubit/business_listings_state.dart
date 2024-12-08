@@ -63,38 +63,36 @@ class Point {
 class Business {
   final String id;
   final String name;
-  final String description;
-  final String category;
-  final String address;
-  final String phone;
-  final String email;
-  final String website;
-  final double rating;
-  final bool isVerified;
-  final bool isMember;
+  final String? description;
+  final String? address;
+  final String? phone;
+  final String? email;
+  final String? website;
+  final double? rating;
+  final bool? isVerified;
+  final bool? isMember;
   final List<String> images;
   final Point? location;
-  final String operatingHours;
-  final bool isOpen;
-  final String status; // New field: business_status enum
-  final String? ownerId; // New field
-  final List<String> categories; // New field to store category names
+  final String? operatingHours;
+  final bool? isOpen;
+  final String status;
+  final String? ownerId;
+  final List<String> categories;
 
   Business({
     required this.id,
     required this.name,
-    required this.description,
-    required this.category,
-    required this.address,
-    required this.phone,
-    required this.email,
-    required this.website,
+    this.description,
+    this.address,
+    this.phone,
+    this.email,
+    this.website,
     this.rating = 0.0,
     this.isVerified = false,
     this.isMember = false,
     this.images = const [],
     this.location,
-    this.operatingHours = '',
+    this.operatingHours,
     this.isOpen = false,
     this.status = 'pending',
     this.ownerId,
@@ -131,12 +129,11 @@ class Business {
     return Business(
       id: json['id'] as String,
       name: json['name'] as String,
-      description: json['description'] as String,
-      category: json['category'] as String,
-      address: json['address'] as String,
-      phone: json['phone'] as String,
-      email: json['email'] as String,
-      website: json['website'] as String,
+      description: json['description'] as String?,
+      address: json['address'] as String?,
+      phone: json['phone'] as String?,
+      email: json['email'] as String?,
+      website: json['website'] as String?,
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       isVerified: json['is_verified'] as bool? ?? false,
       isMember: json['is_member'] as bool? ?? false,
@@ -145,7 +142,7 @@ class Business {
       operatingHours: json['operating_hours'] as String? ?? '',
       isOpen: json['is_open'] as bool? ?? false,
       status: json['status'] ?? 'pending',
-      ownerId: json['owner_id'],
+      ownerId: json['owner_id'] as String?,
       categories: List<String>.from(json['categories'] ?? []),
     );
   }
@@ -154,7 +151,6 @@ class Business {
     return {
       'name': name,
       'description': description,
-      'category': category,
       'address': address,
       'phone': phone,
       'email': email,
@@ -166,6 +162,8 @@ class Business {
       'location': location != null ? '(${location!.x},${location!.y})' : null,
       'operating_hours': operatingHours,
       'is_open': isOpen,
+      'status': status,
+      'owner_id': ownerId,
     };
   }
 

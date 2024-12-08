@@ -165,7 +165,7 @@ class BusinessCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ContentCard(
       title: business.name,
-      description: business.description,
+      description: business.description ?? 'No description available', // Provide a default value,
       imageUrl: business.images.isNotEmpty ? business.images.first : null,
       date: DateTime.now(), // You might want to add a createdAt field to Business model
       tags: business.categories, // Empty list to hide tags
@@ -175,7 +175,7 @@ class BusinessCard extends StatelessWidget {
       footer: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (business.isVerified)
+          if (business.isVerified == true)
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
               child: Icon(
