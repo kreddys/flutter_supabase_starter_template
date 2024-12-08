@@ -24,13 +24,13 @@ class _TagFilter extends StatelessWidget {
         builder: (context, state) {
           final newsCubit = context.read<NewsCubit>();
           final selectedTag = newsCubit.selectedTag;
+          final tags = newsCubit.allTags;
           
-          // Use the stored tags instead of deriving from current articles
           return Row(
             children: [
               _buildTagChip(context, 'All'),
-              ...newsCubit.allTags
-                  .where((tag) => tag != 'All' && tag != selectedTag)
+              ...tags
+                  .where((tag) => tag != 'All')
                   .map((tag) => _buildTagChip(context, tag))
                   .toList(),
             ],
