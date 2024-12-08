@@ -5,7 +5,7 @@ class ContentCard extends StatelessWidget {
   final String title;
   final String description;
   final String? imageUrl;
-  final DateTime date;
+  final DateTime? date;
   final List<String> tags;
   final VoidCallback onTap;
   final Widget? footer;
@@ -99,12 +99,13 @@ class ContentCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        _formatDate(date),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
-                            ),
-                      ),
+                      if (date != null) // Only show date text if date is not null
+                        Text(
+                          _formatDate(date!), // Use ! operator since we know date is not null here
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                              ),
+                        ),
                       if (footer != null) footer!,
                     ],
                   ),
