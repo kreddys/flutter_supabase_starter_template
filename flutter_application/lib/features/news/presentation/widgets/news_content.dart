@@ -140,6 +140,7 @@ Widget build(BuildContext context) {
     body: Column(
       children: [
         if (!_isSearching) _TagFilter(),
+        if (!_isSearching) const SizedBox(height: 8.0),
         Expanded(
           child: _buildBody(context),
         ),
