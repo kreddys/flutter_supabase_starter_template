@@ -97,8 +97,6 @@ class NewsArticleCard extends StatelessWidget {
           const SizedBox(height: 4),
           _buildArticleDescription(context),
           const SizedBox(height: 8),
-          _buildTags(context),
-          const SizedBox(height: 8),
           _buildArticleFooter(context),
         ],
       ),
