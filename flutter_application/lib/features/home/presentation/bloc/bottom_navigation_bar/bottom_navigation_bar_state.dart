@@ -10,28 +10,26 @@ class BottomNavigationBarState extends Equatable {
   final int selectedIndex;
   final bool isNewsSelected;
 
-  List<TabItem> get tabs => [
-    const TabItem(
-      label: "Home",
-      icon: Icons.home,
-      tooltip: "Home",
-      content: WelcomeContent(),
-    ),
-    TabItem(
-      tooltip: isNewsSelected ? 'News' : 'Business',
-      label: isNewsSelected ? 'News' : 'Business',
-      icon: isNewsSelected ? Icons.newspaper : Icons.business,
-      content: isNewsSelected 
-          ? const NewsContent()
-          : const BusinessListingsPage(),
-    ),    
-    const TabItem(
-      label: "Settings",
-      icon: Icons.settings,
-      tooltip: "Settings",
-      content: SettingsPage(),
-    ),
-  ];
+List<TabItem> get tabs => [
+  const TabItem(
+    label: "Home",
+    icon: Icons.home,
+    tooltip: "Home",
+    content: WelcomeContent(),
+  ),
+  const TabItem(
+    label: "News",
+    icon: Icons.newspaper,
+    tooltip: "News",
+    content: NewsContent(),
+  ),    
+  const TabItem(
+    label: "Business",
+    icon: Icons.business,
+    tooltip: "Business",
+    content: BusinessListingsPage(),
+  ),
+];
 
   BottomNavigationBarState copyWith({
     int? selectedIndex,
