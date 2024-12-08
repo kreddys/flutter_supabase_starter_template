@@ -12,33 +12,20 @@ class WelcomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Amaravati Chamber',
-          style: context.textTheme.titleMedium,
-        ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        scrolledUnderElevation: 0, // Removes elevation when scrolling
-        surfaceTintColor: Colors.transparent, // Removes surface tint
-        elevation: 0,
-      ),
-      
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(Spacing.s16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _NewsHeader(),
-                const SizedBox(height: Spacing.s16),
-                _FeaturedCategories(),
-                const SizedBox(height: Spacing.s16),
-                _QuickLinks(),
-              ],
-            ),
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(Spacing.s16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _NewsHeader(),
+              const SizedBox(height: Spacing.s16),
+              _FeaturedCategories(),
+              const SizedBox(height: Spacing.s16),
+              _QuickLinks(),
+            ],
           ),
         ),
       ),

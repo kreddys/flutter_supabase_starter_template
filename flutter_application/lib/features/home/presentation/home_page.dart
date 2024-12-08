@@ -6,6 +6,7 @@ import 'package:amaravati_chamber/features/home/presentation/widgets/home_naviga
 import '../../news/presentation/bloc/news_cubit.dart';
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/monitoring/sentry_monitoring.dart';
+import 'package:amaravati_chamber/features/settings/presentation/page/settings_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({
@@ -45,7 +46,30 @@ class HomePage extends StatelessWidget {
           return changed;
         },
         builder: (context, state) {
+          // Only show AppBar with settings when on the home tab (index 0)
           return Scaffold(
+            appBar: state.selectedIndex == 0 
+                ? AppBar(
+                    title: Text(
+                      'Amaravati Chamber',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    centerTitle: true,
+                    actions: [
+                      IconButton(
+                        icon: const Icon(Icons.settings),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SettingsPage(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  )
+                : null,
             body: SafeArea(
               child: GestureDetector(
                 onHorizontalDragEnd: (DragEndDetails details) {
@@ -54,20 +78,17 @@ class HomePage extends StatelessWidget {
                   final cubit = context.read<BottomNavigationBarCubit>();
                   final currentIndex = state.selectedIndex;
 
-                  // Swipe from left to right (positive velocity)
                   if (details.primaryVelocity! > 0) {
-                    if (currentIndex == 2) { // If on settings page
-                      cubit.switchTab(1); // Go to middle page
-                    } else if (currentIndex == 1) { // If on middle page
-                      cubit.switchTab(0); // Go to home page
+                    if (currentIndex == 2) {
+                      cubit.switchTab(1);
+                    } else if (currentIndex == 1) {
+                      cubit.switchTab(0);
                     }
-                  }
-                  // Swipe from right to left (negative velocity)
-                  else if (details.primaryVelocity! < 0) {
-                    if (currentIndex == 0) { // If on home page
-                      cubit.switchTab(1); // Go to middle page
-                    } else if (currentIndex == 1) { // If on middle page
-                      cubit.switchTab(2); // Go to settings page
+                  } else if (details.primaryVelocity! < 0) {
+                    if (currentIndex == 0) {
+                      cubit.switchTab(1);
+                    } else if (currentIndex == 1) {
+                      cubit.switchTab(2);
                     }
                   }
                 },
