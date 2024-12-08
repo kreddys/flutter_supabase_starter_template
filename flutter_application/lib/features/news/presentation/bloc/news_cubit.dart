@@ -20,6 +20,7 @@ class NewsCubit extends Cubit<NewsState> {
   bool _isLoadingMore = false;
   String _selectedTag = 'All';
   String _searchQuery = '';
+  Set<String> _allTags = {'All'};
 
   NewsCubit(
     this._newsRepository,
@@ -27,46 +28,57 @@ class NewsCubit extends Cubit<NewsState> {
   ) : super(const NewsState.initial());
 
   String get selectedTag => _selectedTag;
-
-  Set<String> _allTags = {'All'};
-
   Set<String> get allTags => _allTags;
 
-Future<void> filterByTag(String tag) async {
-  AppLogger.info('Filtering articles by tag: $tag');
-  SentryMonitoring.addBreadcrumb(
-    message: 'Filtering articles by tag',
-    category: 'news',
-    data: {'tag': tag},
-  );
-
-  _selectedTag = tag;
-  _currentPage = 1;
-  _hasMoreData = true;
-  _allArticles.clear();
-  
-  emit(const NewsState.loading());
-
-  final result = await _newsRepository.getNewsArticles(
-    page: _currentPage,
-    itemsPerPage: _itemsPerPage,
-    tagFilter: tag == 'All' ? null : tag,
-    searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
-  );
-  
-  result.fold(
-    (error) {
-      AppLogger.error('Failed to filter articles by tag: $error');
-      SentryMonitoring.captureException(
-        error,
-        StackTrace.current,
-        tagValue: 'tag_filter_failure',
-      );
-      emit(NewsState.error(error));
-    },
-    (articles) {
-        // Update all tags when loading initial articles
+  Future<void> _loadAllTags() async {
+    final result = await _newsRepository.getNewsArticles(
+      page: 1,
+      itemsPerPage: 999999,
+    );
+    
+    result.fold(
+      (error) {
+        AppLogger.error('Failed to load all tags: $error');
+      },
+      (articles) {
         _allTags = {'All', ...articles.expand((article) => article.tags).map((tag) => tag.name)};
+      },
+    );
+  }
+
+  Future<void> filterByTag(String tag) async {
+    AppLogger.info('Filtering articles by tag: $tag');
+    SentryMonitoring.addBreadcrumb(
+      message: 'Filtering articles by tag',
+      category: 'news',
+      data: {'tag': tag},
+    );
+
+    _selectedTag = tag;
+    _searchQuery = ''; // Clear search query when changing tags
+    _currentPage = 1;
+    _hasMoreData = true;
+    _allArticles.clear();
+    
+    emit(const NewsState.loading());
+
+    final result = await _newsRepository.getNewsArticles(
+      page: _currentPage,
+      itemsPerPage: _itemsPerPage,
+      tagFilter: tag == 'All' ? null : tag,
+    );
+    
+    result.fold(
+      (error) {
+        AppLogger.error('Failed to filter articles by tag: $error');
+        SentryMonitoring.captureException(
+          error,
+          StackTrace.current,
+          tagValue: 'tag_filter_failure',
+        );
+        emit(NewsState.error(error));
+      },
+      (articles) {
         _allArticles = articles;
         _hasMoreData = articles.length >= _itemsPerPage;
         emit(NewsState.loaded(
@@ -75,53 +87,51 @@ Future<void> filterByTag(String tag) async {
           hasMoreData: _hasMoreData,
         ));
       },
-  );
-}
+    );
+  }
 
-Future<void> loadNews() async {
-  AppLogger.info('Loading initial news articles');
-  SentryMonitoring.addBreadcrumb(
-    message: 'Loading news articles',
-    category: 'news',
-    data: {'page': 1},
-  );
+  Future<void> loadNews() async {
+    AppLogger.info('Loading initial news articles');
+    SentryMonitoring.addBreadcrumb(
+      message: 'Loading news articles',
+      category: 'news',
+      data: {'page': 1},
+    );
 
-  emit(const NewsState.loading());
-  _currentPage = 1;
-  _hasMoreData = true;
-  _allArticles.clear();
+    emit(const NewsState.loading());
+    _currentPage = 1;
+    _hasMoreData = true;
+    _allArticles.clear();
+    _searchQuery = ''; // Clear search query when loading all news
 
-  final result = await _newsRepository.getNewsArticles(
-    page: _currentPage,
-    itemsPerPage: _itemsPerPage,
-    tagFilter: _selectedTag == 'All' ? null : _selectedTag,
-    searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
-  );
-  
-  result.fold(
-    (error) {
-      AppLogger.error('Failed to load news articles: $error');
-      SentryMonitoring.captureException(
-        error,
-        StackTrace.current,
-        tagValue: 'news_load_failure',
-      );
-      emit(NewsState.error(error));
-    },
-    (articles) {
-      AppLogger.info('Successfully loaded ${articles.length} articles');
-      _allArticles = articles;
-      // Update the _allTags set with tags from all articles
-      _allTags = {'All', ...articles.expand((article) => article.tags).map((tag) => tag.name)};
-      _hasMoreData = articles.length >= _itemsPerPage;
-      emit(NewsState.loaded(
-        articles: articles,
-        isLoadingMore: false,
-        hasMoreData: _hasMoreData,
-      ));
-    },
-  );
-}
+    final result = await _newsRepository.getNewsArticles(
+      page: _currentPage,
+      itemsPerPage: _itemsPerPage,
+      tagFilter: _selectedTag == 'All' ? null : _selectedTag,
+    );
+    
+    result.fold(
+      (error) {
+        AppLogger.error('Failed to load news articles: $error');
+        SentryMonitoring.captureException(
+          error,
+          StackTrace.current,
+          tagValue: 'news_load_failure',
+        );
+        emit(NewsState.error(error));
+      },
+      (articles) {
+        AppLogger.info('Successfully loaded ${articles.length} articles');
+        _allArticles = articles;
+        _hasMoreData = articles.length >= _itemsPerPage;
+        emit(NewsState.loaded(
+          articles: articles,
+          isLoadingMore: false,
+          hasMoreData: _hasMoreData,
+        ));
+      },
+    );
+  }
 
   Future<void> loadMoreArticles() async {
     if (!_hasMoreData || _isLoadingMore) {
@@ -207,53 +217,53 @@ Future<void> loadNews() async {
     ));
   }
 
-Future<void> searchAllArticles(String query) async {
-  AppLogger.info('Performing API search with query: "$query"');
-  SentryMonitoring.addBreadcrumb(
-    message: 'Searching articles',
-    category: 'news',
-    data: {'query': query},
-  );
+  Future<void> searchAllArticles(String query) async {
+    AppLogger.info('Performing API search with query: "$query"');
+    SentryMonitoring.addBreadcrumb(
+      message: 'Searching articles',
+      category: 'news',
+      data: {'query': query},
+    );
 
-  _searchQuery = query;
+    _searchQuery = query;
 
-  if (query.isEmpty) {
-    AppLogger.debug('Empty search query, loading all articles');
-    await loadNews();
-    return;
+    if (query.isEmpty) {
+      AppLogger.debug('Empty search query, loading all articles');
+      _selectedTag = 'All'; // Reset tag selection when clearing search
+      await loadNews();
+      return;
+    }
+
+    emit(const NewsState.loading());
+    
+    final result = await _newsRepository.getNewsArticles(
+      page: 1,
+      itemsPerPage: 999999,
+      searchQuery: query,
+      tagFilter: _selectedTag == 'All' ? null : _selectedTag,
+    );
+    
+    result.fold(
+      (error) {
+        AppLogger.error('Search failed: $error');
+        SentryMonitoring.captureException(
+          error,
+          StackTrace.current,
+          tagValue: 'search_articles_failure',
+        );
+        emit(NewsState.error(error));
+      },
+      (articles) {
+        AppLogger.info('Search completed with ${articles.length} results');
+        _searchResults = articles;
+        emit(NewsState.loaded(
+          articles: articles,
+          isLoadingMore: false,
+          hasMoreData: false,
+        ));
+      },
+    );
   }
-
-  emit(const NewsState.loading());
-  
-  final result = await _newsRepository.getNewsArticles(
-    page: 1,
-    itemsPerPage: 999999,
-    searchQuery: query,
-    tagFilter: _selectedTag == 'All' ? null : _selectedTag,
-  );
-  
-  result.fold(
-    (error) {
-      AppLogger.error('Search failed: $error');
-      SentryMonitoring.captureException(
-        error,
-        StackTrace.current,
-        tagValue: 'search_articles_failure',
-      );
-      emit(NewsState.error(error));
-    },
-    (articles) {
-      AppLogger.info('Search completed with ${articles.length} results');
-      _searchResults = articles;
-      // Don't update _allTags here to preserve the complete tag list
-      emit(NewsState.loaded(
-        articles: articles,
-        isLoadingMore: false,
-        hasMoreData: false,
-      ));
-    },
-  );
-}
 
   Future<void> updateVoteAndRefresh({
     required String articleId,
