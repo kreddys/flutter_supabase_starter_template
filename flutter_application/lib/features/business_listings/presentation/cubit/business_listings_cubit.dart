@@ -11,23 +11,32 @@ class BusinessListingsCubit extends Cubit<BusinessListingsState> {
 
   Future<void> loadBusinessListings() async {
     try {
-      AppLogger.info('Loading business listings');
       emit(state.copyWith(status: BusinessListingsStatus.loading));
       
       final response = await _supabaseClient
           .from('businesses')
-          .select()
+          .select('''
+            *,
+            business_category_mappings!inner(
+              business_categories(name)
+            )
+          ''')
+          //.eq('status', 'approved')
           .order('name');
 
-      final businesses = (response as List)
-          .map((business) => Business.fromJson(business))
-          .toList();
+          AppLogger.debug('Raw response from Supabase ${response.toString()}');
 
-      AppLogger.info('Successfully loaded ${businesses.length} businesses');
-      await SentryMonitoring.addBreadcrumb(
-        message: 'Businesses loaded successfully',
-        data: {'count': businesses.length},
-      );
+      final businesses = response.map((business) {
+        // Extract category names from the joined data
+        final categories = (business['business_category_mappings'] as List)
+            .map((mapping) => mapping['business_categories']['name'] as String)
+            .toList();
+            
+        return Business.fromJson({
+          ...business,
+          'categories': categories,
+        });
+      }).toList();
 
       emit(state.copyWith(
         status: BusinessListingsStatus.success,
@@ -35,19 +44,12 @@ class BusinessListingsCubit extends Cubit<BusinessListingsState> {
         filteredBusinesses: businesses,
       ));
     } catch (e, stackTrace) {
-      AppLogger.error(
-        'Failed to load business listings',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      await SentryMonitoring.captureException(e, stackTrace);
-      
-      emit(
-        state.copyWith(
-          status: BusinessListingsStatus.failure,
-          errorMessage: e.toString(),
-        ),
-      );
+      AppLogger.error('Error loading businesses', error: e, stackTrace: stackTrace);
+      SentryMonitoring.captureException(e, stackTrace);
+      emit(state.copyWith(
+        status: BusinessListingsStatus.failure,
+        errorMessage: 'Failed to load businesses',
+      ));
     }
   }
 

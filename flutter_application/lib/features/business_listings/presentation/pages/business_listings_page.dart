@@ -168,7 +168,7 @@ class BusinessCard extends StatelessWidget {
       description: business.description,
       imageUrl: business.images.isNotEmpty ? business.images.first : null,
       date: DateTime.now(), // You might want to add a createdAt field to Business model
-      tags: [], // Empty list to hide tags
+      tags: business.categories, // Empty list to hide tags
       onTap: () {
         // TODO: Navigate to detailed business profile
       },

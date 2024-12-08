@@ -76,6 +76,9 @@ class Business {
   final Point? location;
   final String operatingHours;
   final bool isOpen;
+  final String status; // New field: business_status enum
+  final String? ownerId; // New field
+  final List<String> categories; // New field to store category names
 
   Business({
     required this.id,
@@ -93,6 +96,9 @@ class Business {
     this.location,
     this.operatingHours = '',
     this.isOpen = false,
+    this.status = 'pending',
+    this.ownerId,
+    this.categories = const [],
   });
 
   factory Business.fromJson(Map<String, dynamic> json) {
@@ -138,6 +144,9 @@ class Business {
       location: locationPoint,
       operatingHours: json['operating_hours'] as String? ?? '',
       isOpen: json['is_open'] as bool? ?? false,
+      status: json['status'] ?? 'pending',
+      ownerId: json['owner_id'],
+      categories: List<String>.from(json['categories'] ?? []),
     );
   }
 
