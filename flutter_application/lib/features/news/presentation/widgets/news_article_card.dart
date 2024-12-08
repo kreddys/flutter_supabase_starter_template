@@ -29,7 +29,7 @@ class NewsArticleCard extends StatelessWidget {
       description: article.description,
       imageUrl: article.imageUrl,
       date: article.publishedAt,
-      tags: article.tags.map((tag) => tag.name).toList(),
+      tags: [],
       onTap: () => _navigateToArticleDetail(context),
       footer: VoteButtons(
         entityId: article.id,
