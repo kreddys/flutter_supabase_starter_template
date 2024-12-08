@@ -55,6 +55,9 @@ class HomePage extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     centerTitle: true,
+                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                    scrolledUnderElevation: 0,
+                    surfaceTintColor: Colors.transparent,
                     actions: [
                       IconButton(
                         icon: const Icon(Icons.settings),
